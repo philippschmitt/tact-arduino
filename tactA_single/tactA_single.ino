@@ -22,6 +22,8 @@
  * http://www.instructables.com/id/Touche-for-Arduino-Advanced-touch-sensing/
  */
 
+# define VERSION 1
+
 // Serial, symbols per second
 # define BAUD_RATE 115200
 
@@ -31,22 +33,20 @@
 #define CHK(x,y) (x & (1<<y))
 #define TOG(x,y) (x^=(1<<y))
 
-// Frequency spectrum start index
-#define FREQUENCY_START 40
-// Frequency spectrum length
-#define FREQUENCY_LENGTH 32
+#define CMD_BUFFER_INDEX_PIN 0
+#define CMD_BUFFER_INDEX_START 1
+#define CMD_BUFFER_INDEX_COUNT 2
+#define CMD_BUFFER_INDEX_STEP 3
 
-int frequencyLength = FREQUENCY_LENGTH;
-int frequencyStart = FREQUENCY_START;
-int results[FREQUENCY_LENGTH];
+#define STATE_IDLE 0
+#define STATE_RECEIVE_CMD 1
+#define STATE_TRANSMIT_SENSOR 2
 
-// Flags indicating if sensor updates have 
-// been requested by the client (i.e. Processing)
-boolean clientRequested = false;
+// Application state
+int state = STATE_IDLE;
 
-// Command modes for serial com:
-// 0=celar; 1=getter; 2=setter
-int commandMode = 0;
+int cmdBuffer[4] = {0,0,0,0};
+int cmdIndex;
 
 void setup () {
   // Start up serial communication
@@ -55,18 +55,12 @@ void setup () {
   // Set up frequency generator
   TCCR1A = 0b10000010;
   TCCR1B = 0b00011001;
-  // ICR1 = 110;
-  // OCR1A = 55;
   
   // Signal generator pins
   pinMode (7, INPUT);
   pinMode (8, OUTPUT);
   // Sync (test) pin
   pinMode (9, OUTPUT);
-
-  // Fill up result array with default=0
-  for (int i = 0; i < frequencyLength; i++)
-    results[i] = 0;
 }
 
 void loop () {
@@ -80,40 +74,49 @@ void loop () {
   
   // If signal data has been requested 
   // by the client (i.e. Processing) ...
-  if (clientRequested) {
-    for (unsigned int d = frequencyStart; d < frequencyStart + frequencyLength; d++) {
+  if (state == STATE_TRANSMIT_SENSOR) {
+    
+    // Declare sensor value buffer 
+    int results[cmdBuffer[CMD_BUFFER_INDEX_COUNT]];
+    
+    for (unsigned int d = 0; d < cmdBuffer[CMD_BUFFER_INDEX_COUNT]; d++) {
       // Reload new frequency
       TCNT1 = 0;
-      ICR1 = d;
-      OCR1A = d/2;
+      ICR1 = cmdBuffer[CMD_BUFFER_INDEX_START] + cmdBuffer[CMD_BUFFER_INDEX_STEP] * d;
+      OCR1A = ICR1 / 2;
       
       // Restart generator
       SET (TCCR1B, 0);
       // Read response signal
-      int v = analogRead (0);
+      results[d] = (float) analogRead(0);
       // Stop generator
       CLR (TCCR1B, 0);
-      
-      results[d-frequencyStart] = (float) v;
     }
     
+    // Make sure the knowns for which sensor its 
+    // about to receive the values.
+    sendInt (3000 + cmdBuffer[CMD_BUFFER_INDEX_PIN]);
+    
     // Tell client that a result array 
-    // is about to be dispatched
-    sendValue (2000);
+    // is about to be dispatched.
+    sendInt (2000);
+    
     // Wait ...
     delay (1);
+    
     // Send signal spectrum
-    for (int x=0; x < frequencyLength; x++) {
-      sendValue (results[x]);
+    for (int x=0; x < cmdBuffer[CMD_BUFFER_INDEX_COUNT]; x++) {
+      sendInt (results[x]);
     }
     // Confirm that signal spectrum 
     // has been delivered, done!
-    sendValue (2001);
+    sendInt (2001);
     
     // Set the request-indicator back 
     // to false until client resets it
-    clientRequested = false;
+    state = STATE_IDLE;
   }
+  
   // Toggle pin 9 after each 
   // sweep (good for scope)
   TOG (PORTB, 0);

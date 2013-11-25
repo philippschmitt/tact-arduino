@@ -22,13 +22,6 @@
  * http://www.instructables.com/id/Touche-for-Arduino-Advanced-touch-sensing/
  */
 
-byte yMSB=0;
-byte yLSB=0;
-byte xMSB=0;
-byte xLSB=0;
-byte zeroByte=128;
-byte Checksum=0;
-
 /**
  * Function for handling incoming serial events.
  * This includes parsing and respoding of/to commands 
@@ -43,82 +36,70 @@ byte Checksum=0;
  */
 void serialEvent(byte in){
   
-  // New line feed clear the command mode
-  if (in == 10) {
-    commandMode = 0;
-  }else{
-    
-    // Getter mode
-    if (commandMode == 1) {
-      // Get next reading when client
-      // requests got in via ...
-      if (in == 'n')
-        clientRequested = true;
-      // Get size of signal spectrum,
-      // the frequency length
-      else if (in == 'a')
-        sendValue (5000 + frequencyLength);
-      // Get start index of the signal spectrum
-      else if (in == 's')
-        sendValue (4000 + frequencyStart);
-    }
-    
-    // Setter mode
-    else if (commandMode == 2) {
-      // Set frequency start index. Next bytes will be 
-      // the actual value. Get those straight by calling:
-      if (in == 's')
-        frequencyStart = valueReceiveLoop ();
-      // Change frequency length. Next bytes will be 
-      // the actual value. Get those straight by calling:
-      else if (in == 'a')
-        frequencyLength = valueReceiveLoop ();
-    }
-    // No mode selected
-    else if (commandMode == 0) {
-      // Set commandMode to get mode
-      if (in == 'g')
-        commandMode = 1;
-      // Set commandMode to get mode
-      else if (in == 's')
-        commandMode = 2;
-    }
+  if (in == 'v') {
+    sendInt (VERSION);
   }
-}
-
-/**
- * Reads integer values from Serial stream and 
- * thereby can be used to handle setter parameters.
- * (i.e. for signal spectrum start index or length)
- * 
- * @return The value parsed from Serial stream 
- *         as <code>int</code>.
- */
-int valueReceiveLoop () {
-  int buf = 0;
-  boolean endofData = false;
-
-  while(!endofData){
-    // If there's still data in the pipe ...
-    if (Serial.available() > 0 ) {
-      // Read data from serial
-      byte in = Serial.read();
-      // If serial event is not a ";"
-      // ASCII code for end of line, 
-      // then add event to buffer
-      if (in != ';')
-        buf = buf * 10 + (int) (in-48);
-      else
-        endofData = true;
-    }
+  
+  // Secrete handshake for the client to test 
+  // if Tact driven Arduino is present.
+  else if (in == 'h') {
+    if (Serial.available() > 0)
+      // If next char is an 'i'
+      if (Serial.read() == 105)
+        // Send '5'
+        sendInt(53);
   }
-  return buf;
+  
+  // Reset the command buffer index
+  // and change status to "Receiving"
+  else if (in == 'g') {
+    cmdIndex = 0;
+    state = STATE_RECEIVE_CMD;
+  }
+  
+  // For newline, stop receiving command 
+  // buffer values - start transmitting
+  else if (in == 10) {
+    state = STATE_TRANSMIT_SENSOR;
+  }
+  
+  // Reads integer values from Serial stream
+  else if (in > 47 && in < 59) {
+    
+    // Start the int value with the byte
+    // that just has been received
+    int value = (in - 48);
+    
+    // Stay in the while loop until
+    // char ";" comes through the pipe
+    while (true){
+      // If there's still data in the pipe ...
+      if (Serial.available() > 0) {
+        // Read byte from serial stream
+        in = Serial.read();
+        // If serial event is not a ";" ASCII code 
+        // then add event to value buffer
+        if (in != ';') {
+          value = value * 10 + (int) (in - 48);
+        }else{
+          // Integer stream just ended,
+          // exit the while loop.
+          break;
+        }
+      }
+    }
+    
+    // Store integer value in command buffer
+    cmdBuffer[cmdIndex] = value;
+    // Update index pointer
+    cmdIndex++;
+  }
 }
 
 /* y = 01010100 11010100    (value is a 2 Byte integer)
  *     yMSB     yLSB        send seperately -> joined by client
  */
-void sendValue (int value) {
+void sendInt (int value) {
   Serial.write (byte(lowByte(value)));   // send Low Byte  
   Serial.write (byte(highByte(value)));  // send high Byte   
 }
