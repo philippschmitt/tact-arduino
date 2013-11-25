@@ -22,6 +22,8 @@
  * http://www.instructables.com/id/Touche-for-Arduino-Advanced-touch-sensing/
  */
 
+# define VERSION 1
+
 // Serial, symbols per second
 #define BAUD_RATE 115200
 
@@ -31,28 +33,25 @@
 #define CHK(x,y) (x & (1<<y))
 #define TOG(x,y) (x^=(1<<y))
 
-// How many Tact sensor inputs are multiplexed?
-#define NUMBER_OF_SENSORS 3
+#define CMD_BUFFER_INDEX_PIN 0
+#define CMD_BUFFER_INDEX_START 1
+#define CMD_BUFFER_INDEX_COUNT 2
+#define CMD_BUFFER_INDEX_STEP 3
 
-// Frequency spectrum start index
-#define FREQUENCY_START 65
-// Frequency spectrum length
-#define FREQUENCY_LENGTH 32
+#define STATE_IDLE 0
+#define STATE_RECEIVE_CMD 1
+#define STATE_TRANSMIT_SENSOR 2
 
+// Multiplexer 4051' pins
 #define MP_4051_S0 2
 #define MP_4051_S1 3
 #define MP_4051_S2 4
 
-int frequencyLength = FREQUENCY_LENGTH;
-int frequencyStart = FREQUENCY_START;
-int results[FREQUENCY_LENGTH];
+// Application state
+int state = STATE_IDLE;
 
-// Status flag set by client (i.e. Processing)
-boolean clientRequested = false;
-
-// Present command mode
-// 0=celar; 1=getter; 2=setter
-int commandMode = 0;
+int cmdBuffer[4] = {0,0,0,0};
+int cmdIndex;
 
 void setup () {
   // Start up serial communication
@@ -61,8 +60,6 @@ void setup () {
   // Set up frequency generator
   TCCR1A = 0b10000010;
   TCCR1B = 0b00011001;
-  // ICR1 = 110;
-  // OCR1A = 55;
 
   // Signal generator pins
   pinMode (7, INPUT);
@@ -73,10 +70,6 @@ void setup () {
   pinMode (MP_4051_S0, OUTPUT);  // s0
   pinMode (MP_4051_S1, OUTPUT);  // s1
   pinMode (MP_4051_S2, OUTPUT);  // s2
-
-  // Fill up result array with default=0
-  for (int i = 0; i < frequencyLength; i++)
-    results[i] = 0;
 }
 
 void loop () {
@@ -90,54 +83,54 @@ void loop () {
 
   // If signal data has been requested 
   // by the client (i.e. Processing) ...
-  if (clientRequested) {
+  if (state == STATE_TRANSMIT_SENSOR) {
 
-    // For each Tact sensor-input ...
-    for (int count=0; count < NUMBER_OF_SENSORS; count++) {
-
-      // Select the sensor-input / bit
-      // (use this with arduino 0013+)
-      digitalWrite (MP_4051_S0, bitRead (count, 0));
-      digitalWrite (MP_4051_S1, bitRead (count, 1));
-      digitalWrite (MP_4051_S2, bitRead (count, 2));
-
-      // Announce which of the Tact-inputs that 
-      // are multiplexed will be transmitted
-      sendValue (3000 + count);
-
-      for (unsigned int d = frequencyStart; d < frequencyLength+frequencyStart; d++) {
-        // Reload new frequency
-        TCNT1 = 0;
-        ICR1 = d;
-        OCR1A = d/2;
-
-        // Restart generator
-        SET (TCCR1B, 0);
-        // Read response signal
-        int v = analogRead (0);
-        // Stop generator
-        CLR (TCCR1B, 0);
-
-        results[d-frequencyStart] = (float) v;
-      }
-
-      // Tell client that a result array 
-      // is about to be dispatched
-      sendValue (2000);
-      // Wait ...
-      delay (1);
-      // Send signal spectrum
-      for (int x=0;  x < frequencyLength;  x++)
-        sendValue (results[x]);
+    // Declare sensor value buffer 
+    int results[cmdBuffer[CMD_BUFFER_INDEX_COUNT]];
+    
+    // Select the sensor-input / bit
+    // (use this with arduino 0013+)
+    digitalWrite (MP_4051_S0, bitRead (cmdBuffer[CMD_BUFFER_INDEX_PIN], 0));
+    digitalWrite (MP_4051_S1, bitRead (cmdBuffer[CMD_BUFFER_INDEX_PIN], 1));
+    digitalWrite (MP_4051_S2, bitRead (cmdBuffer[CMD_BUFFER_INDEX_PIN], 2));
+    
+    // Announce which of the Tact-inputs that 
+    // are multiplexed will be transmitted
+    sendInt (3000 + cmdBuffer[CMD_BUFFER_INDEX_PIN]);
+    
+    for (unsigned int d = 0; d < cmdBuffer[CMD_BUFFER_INDEX_COUNT]; d++) {
+      // Reload new frequency
+      TCNT1 = 0;
+      ICR1 = cmdBuffer[CMD_BUFFER_INDEX_START] + cmdBuffer[CMD_BUFFER_INDEX_STEP] * d;
+      OCR1A = ICR1 / 2;
       
-      // Confirm that signal spectrum 
-      // has been delivered, done!
-      sendValue (2001);
+      // Restart generator
+      SET (TCCR1B, 0);
+      // Read response signal
+      results[d] = (float) analogRead(0);
+      // Stop generator
+      CLR (TCCR1B, 0);
     }
 
+    // Tell client that a result array 
+    // is about to be dispatched
+    sendInt (2000);
+    
+    // Wait ...
+    delay (1);
+    
+    // Send signal spectrum
+    for (int x=0; x < cmdBuffer[CMD_BUFFER_INDEX_COUNT]; x++) {
+      sendInt (results[x]);
+    }
+
+    // Confirm that signal spectrum 
+    // has been delivered, done!
+    sendInt (2001);
+    
     // Set the request-indicator back 
     // to false until client resets it
-    clientRequested = false;
+    state = STATE_IDLE;
   }
   // Toggle pin 9 after each 
   // sweep (good for scope)
