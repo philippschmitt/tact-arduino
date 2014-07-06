@@ -1,6 +1,6 @@
 /**
  * Tact example for handling capacitive sensing.
- * Copyright (C) 2013, Tomek Ness and Studio NAND
+ * Copyright (C) 2013, Tomek Ness, Jack Rusher and Studio NAND
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,78 +21,46 @@
  * This example is inspired by Mads Hobye's instructables tutorial
  * http://www.instructables.com/id/Touche-for-Arduino-Advanced-touch-sensing/
  */
-
-/**
- * Function for handling incoming serial events.
- * This includes parsing and respoding of/to commands 
- * and switching to different operating modes. Those 
- * are represented by "commandMode", which can be 0, 1 
- * or two. Both last ones stand for getter and setter. 
- * Threreby spectrum start index and length can be 
- * easily modified and adjusted.
- *
- * @param in the byte to process.
- * @return void
- */
-void serialEvent(byte in){
+ 
+void serialEvent (const byte inByte) {
   
-  if (in == 'v') {
-    sendInt (VERSION);
-  }
-  
-  // Secrete handshake for the client to test 
-  // if Tact driven Arduino is present.
-  else if (in == 'h') {
-    if (Serial.available() > 0)
-      // If next char is an 'i'
-      if (Serial.read() == 105)
-        // Send '5'
-        sendInt(53);
-  }
-  
-  // Reset the command buffer index
-  // and change status to "Receiving"
-  else if (in == 'g') {
-    cmdIndex = 0;
-    state = STATE_RECEIVE_CMD;
-  }
-  
-  // For newline, stop receiving command 
-  // buffer values - start transmitting
-  else if (in == 10) {
-    state = STATE_TRANSMIT_SENSOR;
-  }
-  
-  // Reads integer values from Serial stream
-  else if (in > 47 && in < 59) {
-    
-    // Start the int value with the byte
-    // that just has been received
-    int value = (in - 48);
-    
-    // Stay in the while loop until
-    // char ";" comes through the pipe
-    while (true){
-      // If there's still data in the pipe ...
-      if (Serial.available() > 0) {
-        // Read byte from serial stream
-        in = Serial.read();
-        // If serial event is not a ";" ASCII code 
-        // then add event to value buffer
-        if (in != ';') {
-          value = value * 10 + (int) (in - 48);
-        }else{
-          // Integer stream just ended,
-          // exit the while loop.
-          break;
+  switch (inByte) {
+    case '\n':
+      // Process command
+      execute();
+      break;
+    case CMD_SEPARATOR:
+      // If token is command-separator: then increment 
+      // command-index to address the next field of 
+      // the command-buffer
+      cmdIndex++;
+      break;
+    // If none of the above
+    default:
+      // Test if byte represents a digit and 
+      // update exisitng int value
+      if (inByte > 47 && inByte < 58) {
+        cmdBuffer[cmdIndex] = cmdBuffer[cmdIndex] * 10 + (int) (inByte - 48);
+      // If in range from A-Z
+      }else if (inByte > 64 && inByte < 91) {
+        // Set command key/name.
+        cmdKey = inByte;
+        
+        if (inByte == 'G') {
+          state = STATE_RECEIVE_CMD;
         }
+        
+        // reset the command-index to -1
+        cmdIndex = -1;
+        // clear list of command parameters
+        cmdBuffer[0] = 0;
+        cmdBuffer[1] = 0;
+        cmdBuffer[2] = 0;
+        cmdBuffer[3] = 0;
+      }else{
+        // ERROR - unexpected token in parameter stream
       }
-    }
-    
-    // Store integer value in command buffer
-    cmdBuffer[cmdIndex] = value;
-    // Update index pointer
-    cmdIndex++;
+      break;
   }
 }
 
@@ -103,3 +71,4 @@ void sendInt (int value) {
   Serial.write (byte(lowByte(value)));   // send Low Byte  
   Serial.write (byte(highByte(value)));  // send high Byte   
 }
+
