@@ -79,6 +79,9 @@ void loop() {
   if (state == STATE_TRANSMIT_SENSOR) {
     // Declare sensor value buffer 
     int results[cmdBuffer[CMD_BUFFER_INDEX_COUNT]];
+    // Declare peak and bias vars
+    int peak = 0;
+    int bias = 0;
 
     for (unsigned int d = 0; d < cmdBuffer[CMD_BUFFER_INDEX_COUNT]; d++) {
       // Reload new frequency
@@ -92,6 +95,13 @@ void loop() {
       results[d] = (float) analogRead(0);
       // Stop generator
       CLR (TCCR1B, 0);
+
+      // Check if current result is higher than previously stored peak
+      // if true, overwrite peak and bias
+      if( results[d] > peak ) {
+        peak = results[d];
+        bias = d;
+      }
     }
 
     // Announce which of the Tact-inputs that 
@@ -106,6 +116,12 @@ void loop() {
     for (int x=0; x < cmdBuffer[CMD_BUFFER_INDEX_COUNT]; x++) {
       sendInt (results[x]);
     }
+
+    // send peak
+    sendInt(4000+peak);
+
+    // send bias
+    sendInt(5000+bias);
 
     // Confirm that signal spectrum 
     // has been delivered, done!
