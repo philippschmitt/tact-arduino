@@ -42,6 +42,8 @@
 #define STATE_IDLE 0
 #define STATE_RECEIVE_CMD 1
 #define STATE_TRANSMIT_SENSOR 2
+#define STATE_TRANSMIT_PEAK 3
+#define STATE_TRANSMIT_BIAS 4
 
 // Application state
 int state = STATE_IDLE;
@@ -76,7 +78,7 @@ void loop() {
 
   // If signal data has been requested 
   // by the client (i.e. Processing) ...
-  if (state == STATE_TRANSMIT_SENSOR) {
+  if (state == STATE_TRANSMIT_SENSOR || state == STATE_TRANSMIT_PEAK || state == STATE_TRANSMIT_BIAS) {
     // Declare sensor value buffer 
     int results[cmdBuffer[CMD_BUFFER_INDEX_COUNT]];
     // Declare peak and bias vars
@@ -104,24 +106,38 @@ void loop() {
       }
     }
 
+
     // Announce which of the Tact-inputs that 
     // are multiplexed will be transmitted
     sendInt (3000 + cmdBuffer[CMD_BUFFER_INDEX_PIN]);
 
-    // Tell client that a result array 
-    // is about to be dispatched
-    sendInt (2000 + cmdBuffer[CMD_BUFFER_INDEX_COUNT]);
+    // Send data depending on what is requested
+    switch (state) {
+        // send spectrum
+        case STATE_TRANSMIT_SENSOR:
+          // Tell client that a result array 
+          // is about to be dispatched
+          sendInt (2000 + cmdBuffer[CMD_BUFFER_INDEX_COUNT]);
 
-    // Go! Send signal spectrum ...
-    for (int x=0; x < cmdBuffer[CMD_BUFFER_INDEX_COUNT]; x++) {
-      sendInt (results[x]);
+          // Go! Send signal spectrum ...
+          for (int x=0; x < cmdBuffer[CMD_BUFFER_INDEX_COUNT]; x++) {
+            sendInt (results[x]);
+          }
+          break;
+
+        case STATE_TRANSMIT_PEAK:
+          // send peak
+          sendInt(4000+peak);
+          break;
+
+        case STATE_TRANSMIT_BIAS:
+          // send bias
+          sendInt(5000+bias);
+          break;
+
+        default:
+          ; // do nothing
     }
-
-    // send peak
-    sendInt(4000+peak);
-
-    // send bias
-    sendInt(5000+bias);
 
     // Confirm that signal spectrum 
     // has been delivered, done!
@@ -145,6 +161,15 @@ void execute () {
     case 'G':
       state = STATE_TRANSMIT_SENSOR;
       break;
+
+    case 'P':
+      state = STATE_TRANSMIT_PEAK;
+      break;
+
+    case 'B':
+      state = STATE_TRANSMIT_BIAS;
+      break;
+
     case 'V':
       sendInt (5000 + VERSION);
       break;

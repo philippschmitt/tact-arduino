@@ -38,7 +38,7 @@ void serialEvent (const byte inByte) {
     // If none of the above
     default:
       // Test if byte represents a digit and 
-      // update exisitng int value
+      // update existing int value
       if (inByte > 47 && inByte < 58) {
         cmdBuffer[cmdIndex] = cmdBuffer[cmdIndex] * 10 + (int) (inByte - 48);
       // If in range from A-Z
@@ -46,7 +46,7 @@ void serialEvent (const byte inByte) {
         // Set command key/name.
         cmdKey = inByte;
         
-        if (inByte == 'G') {
+        if (inByte == 'G' || inByte == 'P' || inByte == 'B') {
           state = STATE_RECEIVE_CMD;
         }
         
