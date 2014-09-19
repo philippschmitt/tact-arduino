@@ -71,9 +71,10 @@ void loop() {
   // pipe that has not been processed..
   while (Serial.available() > 0) {
     // Read incoming serial data
-    serialEvent (Serial.read());
+    //serialEvent (Serial.read());
+    Serial.write(Serial.read());
   }
-
+/*
   // If signal data has been requested 
   // by the client (i.e. Processing) ...
   if (state == STATE_TRANSMIT_SENSOR) {
@@ -117,6 +118,7 @@ void loop() {
     
     state = STATE_IDLE;
   }
+  */
 }
 
 /**
