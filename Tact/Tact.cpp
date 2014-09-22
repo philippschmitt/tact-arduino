@@ -1,1 +1,160 @@
-test
+/**
+ * Tact Library for handling capacitive sensing.
+ * Copyright (C) 2013, Tomek Ness, Jack Rusher and Studio NAND
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Arduino library https://github.com/StudioNAND/tact-arduino-sketch
+ * Processing library https://github.com/StudioNAND/tact-processing
+ *
+ * This example is inspired by Mads Hobye's instructables tutorial
+ * http://www.instructables.com/id/Touche-for-Arduino-Advanced-touch-sensing/
+ */
+
+
+// Include Arduino and Tact.h Header
+#include "Arduino.h"
+#include "Tact.h"
+
+
+// Constructor
+Tact::Tact(int test) {
+	// do nothing
+}
+
+
+// Destructor
+Tact::~Tact() {
+	// nothing to destroy
+}
+
+
+// Init new Tact Toolkit
+void Tact::begin() {
+
+	// Set application state
+	int state = STATE_IDLE;
+
+	// Start up serial communication
+	Serial.begin (BAUD_RATE);
+
+	// Set up frequency generator
+	TCCR1A = 0b10000010;
+	TCCR1B = 0b00011001;
+
+	// Signal generator pins
+	pinMode (7, INPUT);
+	pinMode (8, OUTPUT);
+	// Sync (test) pin
+	pinMode (9, OUTPUT);
+
+}
+
+
+// Add Sensor
+TactSensor Tact::addSensor() {
+
+	// init new sensor object
+	TactSensor sensor(5);
+
+	// give them something to play with
+	return sensor;
+}
+
+
+// Process incoming Serial data
+void Tact::serialEvent (const byte inByte) {
+	/*
+	switch (inByte) {
+		
+		case '\n':
+			// Process command
+			execute();
+			break;
+
+		case CMD_SEPARATOR:
+			// If token is command-separator: then increment 
+			// command-index to address the next field of 
+			// the command-buffer
+			cmdIndex++;
+			break;
+
+		// If none of the above
+		default:
+			// Test if byte represents a digit and 
+			// update existing int value
+			if (inByte > 47 && inByte < 58) {
+				cmdBuffer[cmdIndex] = cmdBuffer[cmdIndex] * 10 + (int) (inByte - 48);
+				// If in range from A-Z
+			} else if (inByte > 64 && inByte < 91) {
+				// Set command key/name.
+				cmdKey = inByte;
+
+				if (inByte == 'G' || inByte == 'P' || inByte == 'B') {
+					state = STATE_RECEIVE_CMD;
+				}
+
+				// reset the command-index to -1
+				cmdIndex = -1;
+				// clear list of command parameters
+				cmdBuffer[0] = 0;
+				cmdBuffer[1] = 0;
+				cmdBuffer[2] = 0;
+				cmdBuffer[3] = 0;
+
+			} else {
+				// ERROR - unexpected token in parameter stream
+			}
+			break;
+	}
+	*/
+}
+
+
+/* y = 01010100 11010100    (value is a 2 Byte integer)
+ *     yMSB     yLSB        send seperately -> joined by client
+ */
+void Tact::sendInt (int value) {
+	/*
+	Serial.write (byte(lowByte(value)));   // send Low Byte  
+	Serial.write (byte(highByte(value)));  // send high Byte   
+	*/
+}
+
+
+/**
+ * Function to execute current set command, called 
+ * when new-line byte (10) has been received. 
+ */
+void Tact::execute () {
+	/*
+	switch (cmdKey) {
+		case 'G':
+			state = STATE_TRANSMIT_SENSOR;
+			break;
+
+		case 'P':
+			state = STATE_TRANSMIT_PEAK;
+			break;
+
+		case 'B':
+			state = STATE_TRANSMIT_BIAS;
+			break;
+
+		case 'V':
+			sendInt (5000 + VERSION);
+			break;
+	}
+	*/
+}
