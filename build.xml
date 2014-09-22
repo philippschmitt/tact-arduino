@@ -1,0 +1,19 @@
+
+<!-- Build: copy repo in Arduino library dir -->
+<project name="Build" default="doCopy">
+
+	<!-- Source Code Folder -->
+	<property name="source.dir" value="/Volumes/Macintosh HD/Buero/_NAND/Tact/_Repos/tact arduino/Tact"/>
+
+	<!-- Tact Library Folder in Arduino Libraries Folder -->
+	<property name="dest.dir" value="/Users/Philipp/Documents/Arduino/libraries/Tact"/>
+	
+	<!-- Copy Action -->
+	<target name="doCopy">
+		<!--<basename property="source.dir.base.name" file="${source.dir}"/>-->
+		<copy todir="${dest.dir}" >  
+  			<fileset dir="${source.dir}" includes="**/*"/>
+		</copy>
+	</target>
+
+</project>
