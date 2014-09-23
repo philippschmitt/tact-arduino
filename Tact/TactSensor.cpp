@@ -22,14 +22,33 @@
  * http://www.instructables.com/id/Touche-for-Arduino-Advanced-touch-sensing/
  */
 
-
+#include "Arduino.h"
 #include "TactSensor.h"
 
 
-TactSensor::TactSensor (int test) {
+TactSensor::TactSensor (Tact *t, int _cmdBuffer[4]) {
+	// Serial.write(5);
+
+	_tact = t;
+	// write cmdBuffer for TactSensor object
+	// you can't easily copy arrays in c++
+	// while probably not the most elegant, this solution is very readable
+	cmdBuffer[0] = _cmdBuffer[0];
+	cmdBuffer[1] = _cmdBuffer[1];
+	cmdBuffer[2] = _cmdBuffer[2];
+	cmdBuffer[3] = _cmdBuffer[3];
 
 }
+
+
+TactSensor::~TactSensor() {
+	// do nothing
+}
+
 
 int TactSensor::readBias() {
-	return 15;
+	
+	// Ask Tact for latest sensor readings
+	// Tact.readSensor(cmdBuffer);
 }
+

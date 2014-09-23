@@ -27,7 +27,7 @@
 #ifndef Tact_h
 #define Tact_h
 
- 	// include Arduino
+ 	// include Arduino and TactSensor
 	#include "Arduino.h"
  	#include "TactSensor.h"
 
@@ -61,6 +61,9 @@
  	// Define class Tact
 	class Tact {
 
+		// Erlaubt TactSensor Objekten Zugriff auf privates von Tact
+		friend class TactSensor;
+
 		// list all public vars and functions
 		public:
 			// Constructor
@@ -70,7 +73,9 @@
 			// Init Tact Toolkit
 			void begin();
 			// Add Sensor
-			TactSensor addSensor();
+			TactSensor addSensor(int _indexStart, int _indexCount, int _indexStep);
+			// return sensor readings
+			int readSensor(int _cmdBuffer[4]);
 
 		// list all private vars and functions
 		// prefix any private vars with _underscore for clarity
@@ -85,11 +90,13 @@
 			void execute();
 
 			char cmdKey;
-			int cmdBuffer[4];
+			// int cmdBuffer[4];
 			int cmdIndex;
+
+			// Count registered sensors
+			int _sensors;
+
 	};
-
-
 
 
 #endif

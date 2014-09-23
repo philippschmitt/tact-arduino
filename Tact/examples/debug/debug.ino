@@ -1,30 +1,41 @@
 // Include Tact Library
 #include <Tact.h>
 
-
+// Init new Tact Toolkit
 Tact Tact(52);
 
-TactSensor test = Tact.addSensor();
+// Add new Tact Sensor
+TactSensor sensor1 = Tact.addSensor(40,20,1);
 
 
 void setup() {
 	
-	// Init new Tact toolkit
+	// Start Tact toolkit
 	Tact.begin();
-
-	// Add new Sensor named test
-	// TactSensor test = 
 
 	// Start Serial for logging purposes
 	Serial.begin(9600);
-
 }
 
+
 void loop() {
+
+	// Output bias
+	// int bias = sensor1.readBias();
+
+	/*
 	// read bias from sensor
 	int bias =  test.readBias();
-
 	Serial.write(bias);
+	*/
+
+	// sensor1.readBias();
+	// sensor3.readBias();
+
+	// Tact.readBias();
+
+	// output sensor ID
+	// Serial.write( bias );
 
 	delay(1000);
 }

@@ -30,7 +30,9 @@
 
 // Constructor
 Tact::Tact(int test) {
-	// do nothing
+	
+	// set sensor count
+	_sensors = 0;
 }
 
 
@@ -63,10 +65,16 @@ void Tact::begin() {
 
 
 // Add Sensor
-TactSensor Tact::addSensor() {
+TactSensor Tact::addSensor(int _indexStart, int _indexCount, int _indexStep) {
+
+	// create cmdBuffer for new sensor
+	int cmdBuffer[4] = {_sensors, _indexStart, _indexCount, _indexStep };
+
+	// increase sensor counter by 1
+	_sensors++;
 
 	// init new sensor object
-	TactSensor sensor(5);
+	TactSensor sensor(this, cmdBuffer);
 
 	// give them something to play with
 	return sensor;
@@ -158,3 +166,37 @@ void Tact::execute () {
 	}
 	*/
 }
+
+
+int Tact::readSensor(int _cmdBuffer[4]) {
+
+	// Declare sensor value buffer 
+    int results[ _cmdBuffer[CMD_BUFFER_INDEX_COUNT]];
+    // Declare peak and bias vars
+    int peak = 0;
+    int bias = 0;
+
+    for (unsigned int d = 0; d < _cmdBuffer[CMD_BUFFER_INDEX_COUNT]; d++) {
+		// Reload new frequency
+		TCNT1 = 0;
+		ICR1 = _cmdBuffer[CMD_BUFFER_INDEX_START] + _cmdBuffer[CMD_BUFFER_INDEX_STEP] * d;
+		OCR1A = ICR1 / 2;
+
+		// Restart generator
+		SET (TCCR1B, 0);
+		// Read response signal
+		results[d] = (float) analogRead(0);
+		// Stop generator
+		CLR (TCCR1B, 0);
+
+		// Check if current result is higher than previously stored peak
+		// if true, overwrite peak and bias
+		if( results[d] > peak ) {
+			peak = results[d];
+			bias = d;
+		}
+    }
+
+    return bias;
+}
+

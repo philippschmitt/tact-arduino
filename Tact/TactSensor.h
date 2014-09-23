@@ -22,11 +22,22 @@
  * http://www.instructables.com/id/Touche-for-Arduino-Advanced-touch-sensing/
  */
 
+// forward declarate class Tact
+class Tact;
 
 class TactSensor {
 	public:
-		TactSensor(int test);
+		// Constructor
+		TactSensor(Tact *t, int _cmdBuffer[4]);
+		// Destructor
+		~TactSensor();
+
+		// return current Bias
 		int readBias();
+
+		// The config buffer for the current sensor
+		int cmdBuffer[4];
+
 	private:
-		;
+		Tact *_tact; // do nothing
 };

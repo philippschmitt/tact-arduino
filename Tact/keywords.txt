@@ -1,2 +1,4 @@
 Tact		KEYWORD1
-functionXX	KEYWORD2
+TactSensor	KEYWORD1
+
+addSensor	KEYWORD2
