@@ -55,6 +55,11 @@ void Tact::begin() {
 	// Sync (test) pin
 	pinMode (9, OUTPUT);
 
+	// Multiplexer pins
+	pinMode (MP_4051_S0, OUTPUT);  // s0
+	pinMode (MP_4051_S1, OUTPUT);  // s1
+	pinMode (MP_4051_S2, OUTPUT);  // s2
+
 }
 
 
@@ -65,57 +70,54 @@ void Tact::addSensor(int _indexStart, int _indexCount, int _indexStep) {
 	// TactSensor sensor(sensors, _indexStart, _indexCount, _indexStep);
 
 	// add new sensor to sensor list
-	sensorList[sensors] = new TactSensor(sensors, _indexStart, _indexCount, _indexStep);;
+	sensorList[sensors] = new TactSensor(sensors, _indexStart, _indexCount, _indexStep);
 
 	// increase sensor count by 1
 	sensors++;
 }
 
+
+// read data from sensor and refresh data array of object TactSensor
 void Tact::_refresh( TactSensor & sensor ) {
-	
-	// Declare sensor value buffer 
-    int results[sensor.cmdBuffer[CMD_BUFFER_INDEX_COUNT]];
-    // Declare peak and bias vars
-    int peak = 0;
-    int bias = 0;
+
+	// Select the sensor-input / bit
+	// (use this with arduino 0013+)
+	digitalWrite (MP_4051_S0, bitRead (sensor.cmdBuffer[CMD_BUFFER_INDEX_PIN], 0));
+	digitalWrite (MP_4051_S1, bitRead (sensor.cmdBuffer[CMD_BUFFER_INDEX_PIN], 1));
+	digitalWrite (MP_4051_S2, bitRead (sensor.cmdBuffer[CMD_BUFFER_INDEX_PIN], 2));
 
     for (unsigned int d = 0; d < sensor.cmdBuffer[CMD_BUFFER_INDEX_COUNT]; d++) {
-      // Reload new frequency
-      TCNT1 = 0;
-      ICR1 = sensor.cmdBuffer[CMD_BUFFER_INDEX_START] + sensor.cmdBuffer[CMD_BUFFER_INDEX_STEP] * d;
-      OCR1A = ICR1 / 2;
+		// Reload new frequency
+		TCNT1 = 0;
+		ICR1 = sensor.cmdBuffer[CMD_BUFFER_INDEX_START] + sensor.cmdBuffer[CMD_BUFFER_INDEX_STEP] * d;
+		OCR1A = ICR1 / 2;
 
-      // Restart generator
-      SET (TCCR1B, 0);
-      // Read response signal
-      results[d] = (float) analogRead(0);
+		// Restart generator
+		SET (TCCR1B, 0);
+		
+		// Read response signal and write to sensor data container
+		sensor.data[d] = (float) analogRead(0);
 
-      // copy data to object data array
-      sensor.data[d] = results[d];
+		// Stop generator
+		CLR (TCCR1B, 0);
 
-      // Stop generator
-      CLR (TCCR1B, 0);
+		// hier stimmt was nicht: 
 
-      // Check if current result is higher than previously stored peak
-      // if true, overwrite peak and bias
-      if( results[d] > peak ) {
-        peak = results[d];
-        bias = d;
-      }
+		// Check if current result is higher than previously stored peak
+		// if true, overwrite peak and bias
+    	if( (int) sensor.data[d] > (int) sensor.peak ) {
+    		Serial.println(5);
+			sensor.peak = sensor.data[d];
+        	sensor.bias = d;
+    	}
+    	
     }
-
-    // Update object peak and bias vars
-    sensor.peak = peak;
-    sensor.bias = bias;
-    
 }
 
 
 int Tact::readPeak(int _sensorID) {
-
 	// refresh sensor data for current sensor
 	_refresh( (*sensorList[_sensorID]) );
-	
 	// return refreshed bias
 	return (*sensorList[_sensorID]).peak;
 }
@@ -123,10 +125,8 @@ int Tact::readPeak(int _sensorID) {
 
 // Tact:Read Bias
 int Tact::readBias(int _sensorID) {
-
 	// refresh sensor data for current sensor
 	_refresh( (*sensorList[_sensorID]) );
-	
 	// return refreshed bias
 	return (*sensorList[_sensorID]).bias;
 }
@@ -141,14 +141,8 @@ Tact::TactSensor::TactSensor(int _id, int _indexStart, int _indexCount, int _ind
 	cmdBuffer[CMD_BUFFER_INDEX_STEP] = _indexStep;
 
 	// fill variables
-	// data = new int[CMD_BUFFER_INDEX_START];
 	peak = 0;
-	bias = 10;
-}
-
-
-void Tact::TactSensor::test() {
-	// Serial.write( cmdBuffer[1] );
+	bias = 0;
 }
 
 

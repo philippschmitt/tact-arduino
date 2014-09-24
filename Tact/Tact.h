@@ -42,6 +42,13 @@
 	#define CMD_BUFFER_INDEX_COUNT 2
 	#define CMD_BUFFER_INDEX_STEP 3
 
+ 	// max amount of sensors
+ 	#define MAX_SENSOR_COUNT 4
+
+  	// Max allowed number of meterings
+ 	// needed to define data array size in class TactSensor
+ 	#define MAX_BUFFER_SIZE 60
+
 	#define CMD_SEPARATOR ' '
 
 	// Bit set/clear macros
@@ -56,6 +63,10 @@
 	#define STATE_TRANSMIT_PEAK 3
 	#define STATE_TRANSMIT_BIAS 4
 
+ 	// Multiplexer 4051' pins
+	#define MP_4051_S0 12
+	#define MP_4051_S1 11
+	#define MP_4051_S2 10
 
  	// Define class Tact
 	class Tact {
@@ -88,20 +99,18 @@
 					// hold sensor id and config
 					int cmdBuffer[4];
 					// holds data for current sensor
-					int data[];
+					int data[MAX_BUFFER_SIZE];
 					// current sensor peak
 					int peak;
 					// current sensor bias
 					int bias;
-
-					void test();
 			};
 
 			// Application state
 			int state;
 
 			// Array with pointers to all sensor objects
-			TactSensor * sensorList[8];
+			TactSensor * sensorList[MAX_SENSOR_COUNT];
 
 			// read data from sensor and update sensor data array
 			void _refresh( TactSensor & sensor );
