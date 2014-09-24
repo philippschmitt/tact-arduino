@@ -29,27 +29,21 @@
 
 
 // Constructor
-Tact::Tact(int test) {
+Tact::Tact() {
 	
-	// set sensor count
-	_sensors = 0;
-}
-
-
-// Destructor
-Tact::~Tact() {
-	// nothing to destroy
+	// set sensor count to zero
+	sensors = 0;
 }
 
 
 // Init new Tact Toolkit
 void Tact::begin() {
-
+	
 	// Set application state
 	int state = STATE_IDLE;
 
 	// Start up serial communication
-	Serial.begin (BAUD_RATE);
+	// Serial.begin (BAUD_RATE);
 
 	// Set up frequency generator
 	TCCR1A = 0b10000010;
@@ -65,138 +59,96 @@ void Tact::begin() {
 
 
 // Add Sensor
-TactSensor Tact::addSensor(int _indexStart, int _indexCount, int _indexStep) {
+void Tact::addSensor(int _indexStart, int _indexCount, int _indexStep) {
 
-	// create cmdBuffer for new sensor
-	int cmdBuffer[4] = {_sensors, _indexStart, _indexCount, _indexStep };
+	// create new sensor object
+	// TactSensor sensor(sensors, _indexStart, _indexCount, _indexStep);
 
-	// increase sensor counter by 1
-	_sensors++;
+	// add new sensor to sensor list
+	sensorList[sensors] = new TactSensor(sensors, _indexStart, _indexCount, _indexStep);;
 
-	// init new sensor object
-	TactSensor sensor(this, cmdBuffer);
-
-	// give them something to play with
-	return sensor;
+	// increase sensor count by 1
+	sensors++;
 }
 
-
-// Process incoming Serial data
-void Tact::serialEvent (const byte inByte) {
-	/*
-	switch (inByte) {
-		
-		case '\n':
-			// Process command
-			execute();
-			break;
-
-		case CMD_SEPARATOR:
-			// If token is command-separator: then increment 
-			// command-index to address the next field of 
-			// the command-buffer
-			cmdIndex++;
-			break;
-
-		// If none of the above
-		default:
-			// Test if byte represents a digit and 
-			// update existing int value
-			if (inByte > 47 && inByte < 58) {
-				cmdBuffer[cmdIndex] = cmdBuffer[cmdIndex] * 10 + (int) (inByte - 48);
-				// If in range from A-Z
-			} else if (inByte > 64 && inByte < 91) {
-				// Set command key/name.
-				cmdKey = inByte;
-
-				if (inByte == 'G' || inByte == 'P' || inByte == 'B') {
-					state = STATE_RECEIVE_CMD;
-				}
-
-				// reset the command-index to -1
-				cmdIndex = -1;
-				// clear list of command parameters
-				cmdBuffer[0] = 0;
-				cmdBuffer[1] = 0;
-				cmdBuffer[2] = 0;
-				cmdBuffer[3] = 0;
-
-			} else {
-				// ERROR - unexpected token in parameter stream
-			}
-			break;
-	}
-	*/
-}
-
-
-/* y = 01010100 11010100    (value is a 2 Byte integer)
- *     yMSB     yLSB        send seperately -> joined by client
- */
-void Tact::sendInt (int value) {
-	/*
-	Serial.write (byte(lowByte(value)));   // send Low Byte  
-	Serial.write (byte(highByte(value)));  // send high Byte   
-	*/
-}
-
-
-/**
- * Function to execute current set command, called 
- * when new-line byte (10) has been received. 
- */
-void Tact::execute () {
-	/*
-	switch (cmdKey) {
-		case 'G':
-			state = STATE_TRANSMIT_SENSOR;
-			break;
-
-		case 'P':
-			state = STATE_TRANSMIT_PEAK;
-			break;
-
-		case 'B':
-			state = STATE_TRANSMIT_BIAS;
-			break;
-
-		case 'V':
-			sendInt (5000 + VERSION);
-			break;
-	}
-	*/
-}
-
-
-int Tact::readSensor(int _cmdBuffer[4]) {
-
+void Tact::_refresh( TactSensor & sensor ) {
+	
 	// Declare sensor value buffer 
-    int results[ _cmdBuffer[CMD_BUFFER_INDEX_COUNT]];
+    int results[sensor.cmdBuffer[CMD_BUFFER_INDEX_COUNT]];
     // Declare peak and bias vars
     int peak = 0;
     int bias = 0;
 
-    for (unsigned int d = 0; d < _cmdBuffer[CMD_BUFFER_INDEX_COUNT]; d++) {
-		// Reload new frequency
-		TCNT1 = 0;
-		ICR1 = _cmdBuffer[CMD_BUFFER_INDEX_START] + _cmdBuffer[CMD_BUFFER_INDEX_STEP] * d;
-		OCR1A = ICR1 / 2;
+    for (unsigned int d = 0; d < sensor.cmdBuffer[CMD_BUFFER_INDEX_COUNT]; d++) {
+      // Reload new frequency
+      TCNT1 = 0;
+      ICR1 = sensor.cmdBuffer[CMD_BUFFER_INDEX_START] + sensor.cmdBuffer[CMD_BUFFER_INDEX_STEP] * d;
+      OCR1A = ICR1 / 2;
 
-		// Restart generator
-		SET (TCCR1B, 0);
-		// Read response signal
-		results[d] = (float) analogRead(0);
-		// Stop generator
-		CLR (TCCR1B, 0);
+      // Restart generator
+      SET (TCCR1B, 0);
+      // Read response signal
+      results[d] = (float) analogRead(0);
 
-		// Check if current result is higher than previously stored peak
-		// if true, overwrite peak and bias
-		if( results[d] > peak ) {
-			peak = results[d];
-			bias = d;
-		}
+      // copy data to object data array
+      sensor.data[d] = results[d];
+
+      // Stop generator
+      CLR (TCCR1B, 0);
+
+      // Check if current result is higher than previously stored peak
+      // if true, overwrite peak and bias
+      if( results[d] > peak ) {
+        peak = results[d];
+        bias = d;
+      }
     }
 
-    return bias;
+    // Update object peak and bias vars
+    sensor.peak = peak;
+    sensor.bias = bias;
+    
 }
+
+
+int Tact::readPeak(int _sensorID) {
+
+	// refresh sensor data for current sensor
+	_refresh( (*sensorList[_sensorID]) );
+	
+	// return refreshed bias
+	return (*sensorList[_sensorID]).peak;
+}
+
+
+// Tact:Read Bias
+int Tact::readBias(int _sensorID) {
+
+	// refresh sensor data for current sensor
+	_refresh( (*sensorList[_sensorID]) );
+	
+	// return refreshed bias
+	return (*sensorList[_sensorID]).bias;
+}
+
+
+// Constructor for TactSensor
+Tact::TactSensor::TactSensor(int _id, int _indexStart, int _indexCount, int _indexStep) {
+	// fill config array
+	cmdBuffer[CMD_BUFFER_INDEX_PIN] = _id;
+	cmdBuffer[CMD_BUFFER_INDEX_START] = _indexStart;
+	cmdBuffer[CMD_BUFFER_INDEX_COUNT] = _indexCount;
+	cmdBuffer[CMD_BUFFER_INDEX_STEP] = _indexStep;
+
+	// fill variables
+	// data = new int[CMD_BUFFER_INDEX_START];
+	peak = 0;
+	bias = 10;
+}
+
+
+void Tact::TactSensor::test() {
+	// Serial.write( cmdBuffer[1] );
+}
+
 

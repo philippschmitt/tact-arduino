@@ -27,9 +27,8 @@
 #ifndef Tact_h
 #define Tact_h
 
- 	// include Arduino and TactSensor
+ 	// include Arduino
 	#include "Arduino.h"
- 	#include "TactSensor.h"
 
  	// Sensor Version
 	#define VERSION 1
@@ -61,40 +60,61 @@
  	// Define class Tact
 	class Tact {
 
-		// Erlaubt TactSensor Objekten Zugriff auf privates von Tact
-		friend class TactSensor;
-
-		// list all public vars and functions
+		// Tact: List all public vars and functions
 		public:
 			// Constructor
-			Tact(int test);
-			// Deconstructor
-			~Tact();
+			Tact();
 			// Init Tact Toolkit
 			void begin();
 			// Add Sensor
-			TactSensor addSensor(int _indexStart, int _indexCount, int _indexStep);
-			// return sensor readings
-			int readSensor(int _cmdBuffer[4]);
+			void addSensor(int _indexStart, int _indexCount, int _indexStep);
+			// return peak for single sensor
+			int readPeak(int _sensorID = 0);
+			// return bias for single sensor
+			int readBias(int _sensorID = 0);
+			// Count registered sensors
+			int sensors;
+
 
 		// list all private vars and functions
 		// prefix any private vars with _underscore for clarity
 		private:
+
+			// Declare private subclass TactSensor that handles... sensors?
+			class TactSensor {
+				public:
+					// constructor
+					TactSensor(int _id, int _indexStart, int _indexCount, int _indexStep);
+					// hold sensor id and config
+					int cmdBuffer[4];
+					// holds data for current sensor
+					int data[];
+					// current sensor peak
+					int peak;
+					// current sensor bias
+					int bias;
+
+					void test();
+			};
+
 			// Application state
 			int state;
 
+			// Array with pointers to all sensor objects
+			TactSensor * sensorList[8];
+
+			// read data from sensor and update sensor data array
+			void _refresh( TactSensor & sensor );
+
 			// Process incoming Serial data
-			void serialEvent(const byte inByte);
-			void sendInt(int value);
+			// void serialEvent(const byte inByte);
+			// void sendInt(int value);
 			//execute current set command
-			void execute();
+			// void execute();
 
-			char cmdKey;
+			// char cmdKey;
 			// int cmdBuffer[4];
-			int cmdIndex;
-
-			// Count registered sensors
-			int _sensors;
+			// int cmdIndex;
 
 	};
 

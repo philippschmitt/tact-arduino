@@ -2,40 +2,39 @@
 #include <Tact.h>
 
 // Init new Tact Toolkit
-Tact Tact(52);
-
-// Add new Tact Sensor
-TactSensor sensor1 = Tact.addSensor(40,20,1);
+Tact Tact;
 
 
 void setup() {
-	
-	// Start Tact toolkit
-	Tact.begin();
 
 	// Start Serial for logging purposes
 	Serial.begin(9600);
+
+	// Start Tact toolkit
+	Tact.begin();
+
+	// Add new Sensor and config
+	Tact.addSensor(60,30,1);
+		
 }
 
 
 void loop() {
 
-	// Output bias
-	// int bias = sensor1.readBias();
-
 	/*
-	// read bias from sensor
-	int bias =  test.readBias();
-	Serial.write(bias);
+	// Output Bias für einzelnen Sensor
+	// target specific sensor: Tact.readBias(int sensorID);
+	int bias = Tact.readBias();
+	Serial.println(bias);
 	*/
 
-	// sensor1.readBias();
-	// sensor3.readBias();
+	// Output Peak for a single sensor
+	int peak = Tact.readPeak();
 
-	// Tact.readBias();
+	Serial.println(peak);
+	// Serial.println( Tact.readBias() );
 
-	// output sensor ID
-	// Serial.write( bias );
 
-	delay(1000);
+	delay(10);
+	
 }
