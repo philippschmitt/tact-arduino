@@ -86,6 +86,10 @@ void Tact::_refresh( TactSensor & sensor ) {
 	digitalWrite (MP_4051_S1, bitRead (sensor.cmdBuffer[CMD_BUFFER_INDEX_PIN], 1));
 	digitalWrite (MP_4051_S2, bitRead (sensor.cmdBuffer[CMD_BUFFER_INDEX_PIN], 2));
 
+	// reset peak and bias to zero
+	sensor.peak = 0;
+	// sensor.bias = 0;
+
     for (unsigned int d = 0; d < sensor.cmdBuffer[CMD_BUFFER_INDEX_COUNT]; d++) {
 		// Reload new frequency
 		TCNT1 = 0;
@@ -101,17 +105,24 @@ void Tact::_refresh( TactSensor & sensor ) {
 		// Stop generator
 		CLR (TCCR1B, 0);
 
-		// hier stimmt was nicht: 
+		int test = sensor.peak;
+
+		// Serial.println( sensor.data[d] > sensor.peak );
 
 		// Check if current result is higher than previously stored peak
 		// if true, overwrite peak and bias
-    	if( (int) sensor.data[d] > (int) sensor.peak ) {
-    		Serial.println(5);
+    	if( sensor.data[d] > sensor.peak ) {
+    		// Serial.println(5);
 			sensor.peak = sensor.data[d];
         	sensor.bias = d;
     	}
     	
     }
+
+    // Toggle pin 9 after each 
+  	// sweep (good for scope)
+  	// TOG (PORTB, 0);
+
 }
 
 
