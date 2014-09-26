@@ -33,6 +33,9 @@ Tact::Tact() {
 	
 	// set sensor count to zero
 	sensors = 0;
+
+	// serial controller
+	_runCMD = false;
 }
 
 
@@ -40,7 +43,7 @@ Tact::Tact() {
 void Tact::begin() {
 	
 	// Set application state
-	int state = STATE_IDLE;
+	// int serialState = STATE_IDLE;
 
 	// Start up serial communication
 	// Serial.begin (BAUD_RATE);
@@ -63,15 +66,142 @@ void Tact::begin() {
 }
 
 
+// Start Tact with Serial
+void Tact::beginSerial() {
+	// Start up serial communication
+  	Serial.begin (BAUD_RATE);
+	// run regular startup
+	begin();
+}
+
+
+// Serial Event Delegation
+void Tact::readSerial() {
+	// While there is anything in the 
+	// pipe that has not been processed..
+	while (Serial.available() > 0) {
+		// Read incoming serial data
+		_serialEvent (Serial.read());
+	}
+
+	// execute completed Serial commands
+	if( _runCMD == true ) {
+		_executeSerialCommand();
+		_runCMD = false;
+	}
+}
+
+
+void Tact::_serialEvent(const byte inByte) {
+
+	if(_runCMD == true) {
+		return;
+	}
+  
+	switch (inByte) {
+		case '\n':
+			// Process command
+			_runCMD = true;
+			break;
+		case CMD_SEPARATOR:
+			// If token is command-separator: then increment 
+			// command-index to address the next field of 
+			// the command-buffer
+			_serialCmdIndex++;
+			break;
+		// If none of the above
+		default:
+			// Test if byte represents a digit and 
+			// update existing int value
+			if (inByte > 47 && inByte < 58) {
+				_serialCmdBuffer[_serialCmdIndex] = _serialCmdBuffer[_serialCmdIndex] * 10 + (int) (inByte - 48);
+				// If in range from A-Z
+			} else if (inByte > 64 && inByte < 91) {
+				// Set command key/name.
+				_serialCmdKey = inByte;
+				// reset the command-index to -1
+				_serialCmdIndex = -1;
+				// clear list of command parameters
+				_serialCmdBuffer[0] = 0;
+				_serialCmdBuffer[1] = 0;
+				_serialCmdBuffer[2] = 0;
+				_serialCmdBuffer[3] = 0;
+			} else {
+				// ERROR - unexpected token in parameter stream
+			}
+			break;
+	}
+	
+}
+
+
+// execute Serial Command
+void Tact::_executeSerialCommand() {
+
+	// refresh sensor
+	_refresh( (*_sensorList[_serialCmdBuffer[CMD_BUFFER_INDEX_PIN]]) );
+
+	// Announce which of the Tact-inputs that 
+    // are multiplexed will be transmitted
+    _sendInt (3000 + _serialCmdBuffer[CMD_BUFFER_INDEX_PIN]);
+
+	// act depending on command key
+	switch (_serialCmdKey) {
+		
+		// transmit spectrum
+		case 'G':
+
+			// Tell client that a result array 
+          	// is about to be dispatched
+          	_sendInt (2000 + _serialCmdBuffer[CMD_BUFFER_INDEX_COUNT]);
+
+          	// Go! Send signal spectrum ...
+          	for (int x=0; x < _serialCmdBuffer[CMD_BUFFER_INDEX_COUNT]; x++) {
+            	_sendInt( (*_sensorList[_serialCmdBuffer[CMD_BUFFER_INDEX_PIN]]).data[x] );
+         	}
+
+         	// Confirm that signal spectrum 
+    		// has been delivered, done!
+    		_sendInt (2999);
+
+			break;
+
+		// transmit peak
+		case 'P':
+			_sendInt(4000 + readPeak(_serialCmdBuffer[CMD_BUFFER_INDEX_PIN]) );
+			break;
+
+		case 'B':
+			_sendInt(5000 + readBias(_serialCmdBuffer[CMD_BUFFER_INDEX_PIN]) );
+			break;
+
+		case 'V':
+			_sendInt (5000 + VERSION);
+			break;
+
+		default:
+			// no valid command
+			// do nothing
+			break;
+	}
+}
+
+
+// Helper to send integers via Serial
+/* y = 01010100 11010100    (value is a 2 Byte integer)
+ *     yMSB     yLSB        send seperately -> joined by client
+ */
+void Tact::_sendInt (int value) {
+	Serial.write (byte(lowByte(value)));   // send Low Byte  
+	Serial.write (byte(highByte(value)));  // send high Byte   
+}
+
+
+
 // Add Sensor
 void Tact::addSensor(int _indexStart, int _indexCount, int _indexStep) {
-
-	// create new sensor object
-	// TactSensor sensor(sensors, _indexStart, _indexCount, _indexStep);
-
 	// add new sensor to sensor list
-	sensorList[sensors] = new TactSensor(sensors, _indexStart, _indexCount, _indexStep);
-
+	_sensorList[sensors] = new TactSensor(sensors, _indexStart, _indexCount, _indexStep);
 	// increase sensor count by 1
 	sensors++;
 }
@@ -105,10 +235,6 @@ void Tact::_refresh( TactSensor & sensor ) {
 		// Stop generator
 		CLR (TCCR1B, 0);
 
-		int test = sensor.peak;
-
-		// Serial.println( sensor.data[d] > sensor.peak );
-
 		// Check if current result is higher than previously stored peak
 		// if true, overwrite peak and bias
     	if( sensor.data[d] > sensor.peak ) {
@@ -121,25 +247,24 @@ void Tact::_refresh( TactSensor & sensor ) {
 
     // Toggle pin 9 after each 
   	// sweep (good for scope)
-  	// TOG (PORTB, 0);
-
+  	TOG (PORTB, 0);
 }
 
 
 int Tact::readPeak(int _sensorID) {
 	// refresh sensor data for current sensor
-	_refresh( (*sensorList[_sensorID]) );
+	_refresh( (*_sensorList[_sensorID]) );
 	// return refreshed bias
-	return (*sensorList[_sensorID]).peak;
+	return (*_sensorList[_sensorID]).peak;
 }
 
 
 // Tact:Read Bias
 int Tact::readBias(int _sensorID) {
 	// refresh sensor data for current sensor
-	_refresh( (*sensorList[_sensorID]) );
+	_refresh( (*_sensorList[_sensorID]) );
 	// return refreshed bias
-	return (*sensorList[_sensorID]).bias;
+	return (*_sensorList[_sensorID]).bias;
 }
 
 

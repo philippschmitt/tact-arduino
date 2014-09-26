@@ -33,7 +33,7 @@
  	// Sensor Version
 	#define VERSION 1
 
-	// Serial baud rate
+	// Default Serial baud rate
 	#define BAUD_RATE 115200
 
 	// Array 
@@ -43,7 +43,7 @@
 	#define CMD_BUFFER_INDEX_STEP 3
 
  	// max amount of sensors
- 	#define MAX_SENSOR_COUNT 4
+ 	#define MAX_SENSOR_COUNT 8
 
   	// Max allowed number of meterings
  	// needed to define data array size in class TactSensor
@@ -57,11 +57,13 @@
 	#define CHK(x,y) (x & (1<<y))
 	#define TOG(x,y) (x^=(1<<y))
 
+ 	/*
 	#define STATE_IDLE 0
 	#define STATE_RECEIVE_CMD 1
 	#define STATE_TRANSMIT_SENSOR 2
 	#define STATE_TRANSMIT_PEAK 3
 	#define STATE_TRANSMIT_BIAS 4
+	*/
 
  	// Multiplexer 4051' pins
 	#define MP_4051_S0 12
@@ -77,6 +79,10 @@
 			Tact();
 			// Init Tact Toolkit
 			void begin();
+			// Init Tact Toolkit /w Serial
+			void beginSerial();
+			// Serial Event Delegation
+			void readSerial();
 			// Add Sensor
 			void addSensor(int _indexStart, int _indexCount, int _indexStep);
 			// return peak for single sensor
@@ -107,13 +113,22 @@
 			};
 
 			// Application state
-			int state;
+			// int state;
 
 			// Array with pointers to all sensor objects
-			TactSensor * sensorList[MAX_SENSOR_COUNT];
+			TactSensor * _sensorList[MAX_SENSOR_COUNT];
 
 			// read data from sensor and update sensor data array
 			void _refresh( TactSensor & sensor );
+
+			// handle Serial events
+			void _serialEvent(const byte inByte);
+
+			// execute Serial CMD
+			void _executeSerialCommand();
+
+			// helper to send integers via Serial
+			void _sendInt(int value);
 
 			// Process incoming Serial data
 			// void serialEvent(const byte inByte);
@@ -121,9 +136,11 @@
 			//execute current set command
 			// void execute();
 
-			// char cmdKey;
-			// int cmdBuffer[4];
-			// int cmdIndex;
+			char _serialCmdKey;
+			int _serialCmdBuffer[4];
+			int _serialCmdIndex;
+			int _serialState;
+			bool _runCMD;
 
 	};
 
