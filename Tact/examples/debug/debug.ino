@@ -24,7 +24,8 @@ void setup() {
 	Tact.beginSerial();
 
 	// Add new Sensor and config
-	Tact.addSensor(48, 32, 2);
+	Tact.addSensor(68, 32, 2);
+	// Tact.addSensor(2, 48, 32, 2);
 
 	// Add a second sensor
 	// Tact.addSensor(60, 30, 2);
@@ -33,27 +34,26 @@ void setup() {
 
 void loop() {
 
-	// Tact.readBias();
-
 	// used to receive tasks and send data via Serial
 	Tact.readSerial();
 
-
+	/*
 	unsigned long currentMillis = millis();
  
-  if(currentMillis - previousMillis > interval) {
-    // save the last time you blinked the LED 
-    previousMillis = currentMillis;   
+	if(currentMillis - previousMillis > interval) {
+	// save the last time you blinked the LED 
+	previousMillis = currentMillis;   
 
-    // if the LED is off turn it on and vice-versa:
-    if (ledState == LOW)
-      ledState = HIGH;
-    else
-      ledState = LOW;
+	// if the LED is off turn it on and vice-versa:
+	if (ledState == LOW)
+	  ledState = HIGH;
+	else
+	  ledState = LOW;
 
-    // set the LED with the ledState of the variable:
-    digitalWrite(ledPin, ledState);
-  }
+	// set the LED with the ledState of the variable:
+	digitalWrite(ledPin, ledState);
+	}
+	*/
 
 	// TactSerial();
 

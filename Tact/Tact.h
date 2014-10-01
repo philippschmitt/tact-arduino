@@ -37,10 +37,10 @@
 	#define BAUD_RATE 115200
 
 	// Array 
-	#define CMD_BUFFER_INDEX_PIN 0
-	#define CMD_BUFFER_INDEX_START 1
-	#define CMD_BUFFER_INDEX_COUNT 2
-	#define CMD_BUFFER_INDEX_STEP 3
+	#define CMD_BUFFER_PIN 0
+	#define CMD_BUFFER_START 1
+	#define CMD_BUFFER_COUNT 2
+	#define CMD_BUFFER_STEP 3
 
  	// max amount of sensors
  	#define MAX_SENSOR_COUNT 8
@@ -83,14 +83,16 @@
 			void beginSerial();
 			// Serial Event Delegation
 			void readSerial();
-			// Add Sensor
-			void addSensor(int _indexStart, int _indexCount, int _indexStep);
+			// Add single sensor with ID 0
+			void addSensor(unsigned int _indexStart, unsigned int _indexCount, unsigned int _indexStep);
+			// Add Sensor with custom ID
+			void addSensor(unsigned int _sensorID, unsigned int _indexStart, unsigned int _indexCount, unsigned int _indexStep);
+			// change sensor settings
+			void updateSensor(unsigned int _sensorID, unsigned int _indexStart, unsigned int _indexCount, unsigned int _indexStep);
 			// return peak for single sensor
-			int readPeak(int _sensorID = 0);
+			int readPeak(unsigned int _sensorID = 0);
 			// return bias for single sensor
-			int readBias(int _sensorID = 0);
-			// Count registered sensors
-			int sensors;
+			int readBias(unsigned int _sensorID = 0);
 
 
 		// list all private vars and functions
@@ -101,21 +103,21 @@
 			class TactSensor {
 				public:
 					// constructor
-					TactSensor(int _id, int _indexStart, int _indexCount, int _indexStep);
+					TactSensor(unsigned int _id, unsigned int _indexStart, unsigned int _indexCount, unsigned int _indexStep);
 					// hold sensor id and config
-					int cmdBuffer[4];
+					unsigned int cmdBuffer[4];
 					// holds data for current sensor
-					int data[MAX_BUFFER_SIZE];
+					unsigned int data[MAX_BUFFER_SIZE];
 					// current sensor peak
-					int peak;
+					unsigned int peak;
 					// current sensor bias
-					int bias;
+					unsigned int bias;
 			};
 
 			// Application state
 			// int state;
 
-			// Array with pointers to all sensor objects
+			// Array of pointers to all sensor objects
 			TactSensor * _sensorList[MAX_SENSOR_COUNT];
 
 			// read data from sensor and update sensor data array
@@ -128,18 +130,12 @@
 			void _executeSerialCommand();
 
 			// helper to send integers via Serial
-			void _sendInt(int value);
-
-			// Process incoming Serial data
-			// void serialEvent(const byte inByte);
-			// void sendInt(int value);
-			//execute current set command
-			// void execute();
+			void _sendInt(unsigned int value);
 
 			char _serialCmdKey;
-			int _serialCmdBuffer[4];
-			int _serialCmdIndex;
-			int _serialState;
+			unsigned int _serialCmdBuffer[4];
+			unsigned int _serialCmdIndex;
+			unsigned int _serialState;
 			bool _runCMD;
 
 	};
