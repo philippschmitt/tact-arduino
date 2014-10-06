@@ -7,7 +7,7 @@ Each command consists of one uppercase command key, followed by four integers fo
 
 Processing example:
 
-    P 0 48 32 1 \n
+    P 0 48 32 1\n
     
 for humans: 
 
@@ -30,7 +30,7 @@ Peak values are transmitted in a "namespace" or rather range between 4000 and 50
 | Lib Version (initial handshake) | V             | `1000 + VERSION`       |
 | Spectrum                        | S             | successively:          |
 |                                 |               | `2000 + DATA_COUNT`    |
-|                                 |               | `2976 + DATA`          |
-|                                 |               | `2975`                 |
+|                                 |               | `2977 + DATA`          |
+|                                 |               | `2976` (end)           |
 | Peak                            | P             | `4000 + PEAK`          |
 | Bias                            | B             | `5024 + BIAS`          |
