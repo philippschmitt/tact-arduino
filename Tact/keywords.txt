@@ -1,0 +1,6 @@
+Tact		KEYWORD1
+TactSensor	KEYWORD1
+
+addSensor	KEYWORD2
+readBias	KEYWORD2
+readPeak	KEYWORD2

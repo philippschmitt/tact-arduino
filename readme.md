@@ -1,3 +1,3 @@
-# Tact Arduino Sketches
+# Tact Arduino
 
-This is a collection of Arduino sketches that handle µTact sensors.
+This is the Tact Arduino Library. Work in progress.
