@@ -29,7 +29,8 @@
 
 
 // Constructor
-Tact::Tact() {
+// also sets _useMultiplexer and _runCMD
+Tact::Tact(bool useMultiplexer) : _useMultiplexer(useMultiplexer), _runCMD(false) {
 
 	// serial controller
 	// _runCMD = false;
@@ -55,9 +56,11 @@ void Tact::begin() {
 	pinMode (9, OUTPUT);
 
 	// Multiplexer pins
-	pinMode (MP_4051_S0, OUTPUT);  // s0
-	pinMode (MP_4051_S1, OUTPUT);  // s1
-	pinMode (MP_4051_S2, OUTPUT);  // s2
+	if(_useMultiplexer) {
+		pinMode (MP_4051_S0, OUTPUT);  // s0
+		pinMode (MP_4051_S1, OUTPUT);  // s1
+		pinMode (MP_4051_S2, OUTPUT);  // s2
+	}
 
 }
 
@@ -244,37 +247,40 @@ void Tact::updateSensor(unsigned int _sensorID, unsigned int _indexStart, unsign
 // read data from sensor and refresh data array of object TactSensor
 void Tact::_refresh( TactSensor * sensor ) {
 
-	// Select the sensor-input / bit
-	// (use this with arduino 0013+)
-	digitalWrite (MP_4051_S0, bitRead ((*sensor).cmdBuffer[CMD_BUFFER_PIN], 0));
-	digitalWrite (MP_4051_S1, bitRead ((*sensor).cmdBuffer[CMD_BUFFER_PIN], 1));
-	digitalWrite (MP_4051_S2, bitRead ((*sensor).cmdBuffer[CMD_BUFFER_PIN], 2));
-
+	// using multiplex sensor?
+	if(_useMultiplexer) {
+		// Select the sensor-input / bit
+		// (use this with arduino 0013+)
+		digitalWrite (MP_4051_S0, bitRead (sensor->cmdBuffer[CMD_BUFFER_PIN], 0));
+		digitalWrite (MP_4051_S1, bitRead (sensor->cmdBuffer[CMD_BUFFER_PIN], 1));
+		digitalWrite (MP_4051_S2, bitRead (sensor->cmdBuffer[CMD_BUFFER_PIN], 2));
+	}
+	
 	// reset peak and bias to zero
-	(*sensor).peak = 0;
+	sensor->peak = 0;
 	// sensor.bias = 0;
 
-    for (unsigned int d = 0; d < (*sensor).cmdBuffer[CMD_BUFFER_COUNT]; d++) {
+    for (unsigned int d = 0; d < sensor->cmdBuffer[CMD_BUFFER_COUNT]; d++) {
 		// Reload new frequency
 		TCNT1 = 0;
-		ICR1 = (*sensor).cmdBuffer[CMD_BUFFER_START] + (*sensor).cmdBuffer[CMD_BUFFER_STEP] * d;
+		ICR1 = sensor->cmdBuffer[CMD_BUFFER_START] + sensor->cmdBuffer[CMD_BUFFER_STEP] * d;
 		OCR1A = ICR1 / 2;
 
 		// Restart generator
 		SET (TCCR1B, 0);
 		
 		// Read response signal and write to sensor data container
-		(*sensor).data[d] = (float) analogRead(0);
+		sensor->data[d] = (float) analogRead(0);
 
 		// Stop generator
 		CLR (TCCR1B, 0);
 
 		// Check if current result is higher than previously stored peak
 		// if true, overwrite peak and bias
-    	if( (*sensor).data[d] > (*sensor).peak ) {
+    	if( sensor->data[d] > sensor->peak ) {
     		// Serial.println(5);
-			(*sensor).peak = (*sensor).data[d];
-        	(*sensor).bias = d;
+			sensor->peak = sensor->data[d];
+        	sensor->bias = d;
     	}
     	
     }

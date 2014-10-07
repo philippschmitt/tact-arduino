@@ -2,7 +2,7 @@
 #include <Tact.h>
 
 // Init new Tact Toolkit
-Tact Tact;
+Tact Tact(TACT_SINGLE);
 
 
 void setup() {
@@ -17,10 +17,10 @@ void setup() {
 	// Tact.beginSerial();
 
 	// Add new Sensor and config
-	Tact.addSensor(0, 68, 32, 2);
+	Tact.addSensor(0, 48, 32, 2);
 	
 	// Add a second sensor
-	//Tact.addSensor(0, 48, 32, 2);
+	// Tact.addSensor(0, 48, 32, 2);
 }
 
 
@@ -33,13 +33,13 @@ void loop() {
 	// Tact.readBias( sensorID );
 
 	// read Peak
-	// Tact.readPeak( sensorID );
+	int peak = Tact.readPeak(0);
+	Serial.println(peak);
 	
 	// read Spectrum
-	int spectrum[32];
-	Tact.readSpectrum(0, spectrum);	
-
-	Serial.println( spectrum[15] );
+	// int spectrum[32];
+	// Tact.readSpectrum(0, spectrum);	
+	// Serial.println( spectrum[15] );
 	Serial.println( );
 
 	// delay(200);

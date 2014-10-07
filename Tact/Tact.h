@@ -45,6 +45,10 @@
  	// max amount of sensors
  	#define MAX_SENSOR_COUNT 8
 
+ 	// use multiplexer or single sensor
+ 	#define TACT_SINGLE false
+ 	#define TACT_MULTI true
+
   	// Max allowed number of meterings
  	// needed to define data array size in class TactSensor
  	#define MAX_BUFFER_SIZE 60
@@ -76,7 +80,7 @@
 		// Tact: List all public vars and functions
 		public:
 			// Constructor
-			Tact();
+			Tact(bool useMultiplexer);
 			// Init Tact Toolkit
 			void begin();
 			// Init Tact Toolkit /w Serial
@@ -139,6 +143,9 @@
 			unsigned int _serialCmdIndex;
 			unsigned int _serialState;
 			bool _runCMD;
+
+			// flag; set true if multiplexer should be used
+			bool _useMultiplexer;
 			
 	};
 
