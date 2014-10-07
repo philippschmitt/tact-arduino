@@ -88,7 +88,7 @@
 			// Add Sensor with custom ID
 			void addSensor(unsigned int _sensorID, unsigned int _indexStart, unsigned int _indexCount, unsigned int _indexStep);
 			// change sensor settings
-			void updateSensor(unsigned int _sensorID, unsigned int _indexStart, unsigned int _indexCount, unsigned int _indexStep);
+			// void updateSensor(unsigned int _sensorID, unsigned int _indexStart, unsigned int _indexCount, unsigned int _indexStep);
 			// return peak for single sensor
 			int readPeak(unsigned int _sensorID = 0);
 			// return bias for single sensor
@@ -121,7 +121,7 @@
 			TactSensor * _sensorList[MAX_SENSOR_COUNT];
 
 			// read data from sensor and update sensor data array
-			void _refresh( TactSensor & sensor );
+			void _refresh( TactSensor * sensor );
 
 			// handle Serial events
 			void _serialEvent(const byte inByte);
@@ -137,7 +137,7 @@
 			unsigned int _serialCmdIndex;
 			unsigned int _serialState;
 			bool _runCMD;
-
+			
 	};
 
 

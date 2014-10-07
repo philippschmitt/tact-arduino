@@ -5,27 +5,28 @@
 Tact Tact;
 
 
-int ledState = LOW;             // ledState used to set the LED
-long previousMillis = 0;
-long interval = 500; 
-const int ledPin = A2; 
-
-
 void setup() {
 
 	pinMode(A2, OUTPUT);
 
 	// Start Serial for logging purposes
-	// Serial.begin(9600);
+	Serial.begin(115200);
 
 	// Start Tact toolkit
 	// Tact.begin();
-
 	Tact.beginSerial();
 
 	// Add new Sensor and config
-	Tact.addSensor(68, 32, 2);
-	// Tact.addSensor(2, 48, 32, 2);
+	/*
+	Tact.addSensor(0, 68, 32, 2);
+	Tact.addSensor(1, 48, 32, 1);
+	Tact.addSensor(2, 30, 32, 2);
+	Tact.addSensor(3, 50, 48, 1);
+	Tact.addSensor(4, 68, 32, 2);
+	Tact.addSensor(5, 48, 32, 1);
+	Tact.addSensor(6, 30, 32, 2);
+	Tact.addSensor(7, 50, 48, 1);
+	*/
 
 	// Add a second sensor
 	// Tact.addSensor(60, 30, 2);
@@ -59,17 +60,27 @@ void loop() {
 
 	// flash LED for testing 
 
-	/*
+	
 	// Output Bias für einzelnen Sensor
 	// target specific sensor: Tact.readBias(int sensorID);
-	int bias = Tact.readBias();
-	Serial.println(bias);
-	*/
+	// int bias = Tact.readBias();
+	// Serial.println(bias);
 
+	/*
 	// Output Peak for a single sensor
-	// int peak1 = Tact.readBias();
+	Serial.println( Tact.readPeak() );
+	Serial.println( Tact.readPeak(1) );
+	Serial.println( Tact.readPeak(2) );
+	Serial.println( Tact.readPeak(3) );
+	Serial.println( Tact.readPeak(4) );
+	Serial.println( Tact.readPeak(5) );
+	Serial.println( Tact.readPeak(6) );
+	Serial.println( Tact.readPeak(7) );
 
-	// Serial.println( Tact.readBias(1) );
+	Serial.println( );
+	*/
+	
+	// Serial.println( 1 );
 	// Serial.println( Tact.readBias(1) );
 
 	// int peak2 = Tact.readBias(1);

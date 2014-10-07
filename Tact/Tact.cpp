@@ -32,7 +32,7 @@
 Tact::Tact() {
 
 	// serial controller
-	_runCMD = false;
+	// _runCMD = false;
 
 	// initiate all fields in sensorList array to NULL
 	for (int i = 0; i < MAX_SENSOR_COUNT; ++i) {
@@ -67,7 +67,7 @@ void Tact::begin() {
 
 }
 
-
+/*
 // Start Tact with Serial
 void Tact::beginSerial() {
 	// Start up serial communication
@@ -92,8 +92,9 @@ void Tact::readSerial() {
 		_runCMD = false;
 	}
 }
+*/
 
-
+/*
 void Tact::_serialEvent(const byte inByte) {
 
 	// Do not listen if command is being processed
@@ -135,8 +136,9 @@ void Tact::_serialEvent(const byte inByte) {
 	}
 	
 }
+*/
 
-
+/*
 // execute Serial Command
 void Tact::_executeSerialCommand() {
 
@@ -155,7 +157,7 @@ void Tact::_executeSerialCommand() {
 		} else {
 			updateSensor(_serialCmdBuffer[CMD_BUFFER_PIN], _serialCmdBuffer[CMD_BUFFER_START], _serialCmdBuffer[CMD_BUFFER_COUNT], _serialCmdBuffer[CMD_BUFFER_STEP]);
 		}
-		*/
+		*//*
 
 		// Announce which of the Tact-inputs that 
     	// are multiplexed will be transmitted
@@ -203,17 +205,19 @@ void Tact::_executeSerialCommand() {
 			break;
 	}
 }
+*/
 
 
 // Helper to send integers via Serial
 /* y = 01010100 11010100    (value is a 2 Byte integer)
  *     yMSB     yLSB        send seperately -> joined by client
  */
+ /*
 void Tact::_sendInt (unsigned int value) {
 	Serial.write (byte(lowByte(value)));   // send Low Byte  
 	Serial.write (byte(highByte(value)));  // send high Byte   
 }
-
+*/
 
 // Add single sensor with ID = 0
 void Tact::addSensor(unsigned int _indexStart, unsigned int _indexCount, unsigned int _indexStep) {
@@ -225,10 +229,10 @@ void Tact::addSensor(unsigned int _indexStart, unsigned int _indexCount, unsigne
 // Add Sensor with custom ID
 void Tact::addSensor(unsigned int _sensorID, unsigned int _indexStart, unsigned int _indexCount, unsigned int _indexStep) {
 	// add new sensor to sensor list
-	_sensorList[_sensorID] = & TactSensor(_sensorID, _indexStart, _indexCount, _indexStep);
+	_sensorList[_sensorID] = new TactSensor(_sensorID, _indexStart, _indexCount, _indexStep);
 }
 
-
+/*
 // Update sensor settings
 void Tact::updateSensor(unsigned int _sensorID, unsigned int _indexStart, unsigned int _indexCount, unsigned int _indexStep) {
 	// update sensor settings
@@ -241,42 +245,42 @@ void Tact::updateSensor(unsigned int _sensorID, unsigned int _indexStart, unsign
 		// _refresh( (*_sensorList[_sensorID]) );
 	// }
 }
-
+*/
 
 // read data from sensor and refresh data array of object TactSensor
-void Tact::_refresh( TactSensor & sensor ) {
+void Tact::_refresh( TactSensor * sensor ) {
 
 	// Select the sensor-input / bit
 	// (use this with arduino 0013+)
-	digitalWrite (MP_4051_S0, bitRead (sensor.cmdBuffer[CMD_BUFFER_PIN], 0));
-	digitalWrite (MP_4051_S1, bitRead (sensor.cmdBuffer[CMD_BUFFER_PIN], 1));
-	digitalWrite (MP_4051_S2, bitRead (sensor.cmdBuffer[CMD_BUFFER_PIN], 2));
+	digitalWrite (MP_4051_S0, bitRead ((*sensor).cmdBuffer[CMD_BUFFER_PIN], 0));
+	digitalWrite (MP_4051_S1, bitRead ((*sensor).cmdBuffer[CMD_BUFFER_PIN], 1));
+	digitalWrite (MP_4051_S2, bitRead ((*sensor).cmdBuffer[CMD_BUFFER_PIN], 2));
 
 	// reset peak and bias to zero
-	sensor.peak = 0;
+	(*sensor).peak = 0;
 	// sensor.bias = 0;
 
-    for (unsigned int d = 0; d < sensor.cmdBuffer[CMD_BUFFER_COUNT]; d++) {
+    for (unsigned int d = 0; d < (*sensor).cmdBuffer[CMD_BUFFER_COUNT]; d++) {
 		// Reload new frequency
 		TCNT1 = 0;
-		ICR1 = sensor.cmdBuffer[CMD_BUFFER_START] + sensor.cmdBuffer[CMD_BUFFER_STEP] * d;
+		ICR1 = (*sensor).cmdBuffer[CMD_BUFFER_START] + (*sensor).cmdBuffer[CMD_BUFFER_STEP] * d;
 		OCR1A = ICR1 / 2;
 
 		// Restart generator
 		SET (TCCR1B, 0);
 		
 		// Read response signal and write to sensor data container
-		sensor.data[d] = (float) analogRead(0);
+		(*sensor).data[d] = (float) analogRead(0);
 
 		// Stop generator
 		CLR (TCCR1B, 0);
 
 		// Check if current result is higher than previously stored peak
 		// if true, overwrite peak and bias
-    	if( sensor.data[d] > sensor.peak ) {
+    	if( (*sensor).data[d] > (*sensor).peak ) {
     		// Serial.println(5);
-			sensor.peak = sensor.data[d];
-        	sensor.bias = d;
+			(*sensor).peak = (*sensor).data[d];
+        	(*sensor).bias = d;
     	}
     	
     }
@@ -289,8 +293,9 @@ void Tact::_refresh( TactSensor & sensor ) {
 
 int Tact::readPeak(unsigned int _sensorID) {
 	// refresh sensor data for current sensor
-	_refresh( (*_sensorList[_sensorID]) );
+	_refresh( _sensorList[_sensorID] );
 	// return refreshed bias
+	// return (*_sensorList[_sensorID]).peak;
 	return (*_sensorList[_sensorID]).peak;
 }
 
@@ -298,9 +303,9 @@ int Tact::readPeak(unsigned int _sensorID) {
 // Tact:Read Bias
 int Tact::readBias(unsigned int _sensorID) {
 	// refresh sensor data for current sensor
-	_refresh( (*_sensorList[_sensorID]) );
+	// _refresh( (*_sensorList[_sensorID]) );
 	// return refreshed bias
-	return (*_sensorList[_sensorID]).bias;
+	// return (*_sensorList[_sensorID]).bias;
 }
 
 
