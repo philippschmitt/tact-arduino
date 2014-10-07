@@ -43,12 +43,6 @@ Tact::Tact() {
 
 // Init new Tact Toolkit
 void Tact::begin() {
-	
-	// Set application state
-	// int serialState = STATE_IDLE;
-
-	// Start up serial communication
-	// Serial.begin (BAUD_RATE);
 
 	// Set up frequency generator
 	TCCR1A = 0b10000010;
@@ -222,7 +216,7 @@ void Tact::_sendInt (unsigned int value) {
 // Add single sensor with ID = 0
 void Tact::addSensor(unsigned int _indexStart, unsigned int _indexCount, unsigned int _indexStep) {
 	// add new sensor to sensor list
-	_sensorList[0] = & TactSensor(0, _indexStart, _indexCount, _indexStep);
+	_sensorList[0] = new TactSensor(0, _indexStart, _indexCount, _indexStep);
 }
 
 
@@ -295,7 +289,6 @@ int Tact::readPeak(unsigned int _sensorID) {
 	// refresh sensor data for current sensor
 	_refresh( _sensorList[_sensorID] );
 	// return refreshed bias
-	// return (*_sensorList[_sensorID]).peak;
 	return (*_sensorList[_sensorID]).peak;
 }
 
@@ -303,9 +296,18 @@ int Tact::readPeak(unsigned int _sensorID) {
 // Tact:Read Bias
 int Tact::readBias(unsigned int _sensorID) {
 	// refresh sensor data for current sensor
-	// _refresh( (*_sensorList[_sensorID]) );
+	_refresh( _sensorList[_sensorID] );
 	// return refreshed bias
-	// return (*_sensorList[_sensorID]).bias;
+	return (*_sensorList[_sensorID]).bias;
+}
+
+
+// read Spectrum and write values to provided array
+void Tact::readSpectrum(unsigned int _sensorID, int *targetArray) {
+	// refresh sensor data for current sensor
+	_refresh( _sensorList[_sensorID] );
+	// work directly with retArray or memcpy into it from elsewhere like
+  	memcpy(targetArray, (*_sensorList[_sensorID]).data, (*_sensorList[_sensorID]).cmdBuffer[CMD_BUFFER_COUNT]); 
 }
 
 

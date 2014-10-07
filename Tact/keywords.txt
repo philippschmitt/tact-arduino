@@ -1,6 +1,8 @@
 Tact		KEYWORD1
 TactSensor	KEYWORD1
 
+begin		KEYWORD2
+beginSerial KEYWORD2
 addSensor	KEYWORD2
 readBias	KEYWORD2
 readPeak	KEYWORD2

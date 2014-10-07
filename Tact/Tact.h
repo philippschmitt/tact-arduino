@@ -93,6 +93,8 @@
 			int readPeak(unsigned int _sensorID = 0);
 			// return bias for single sensor
 			int readBias(unsigned int _sensorID = 0);
+			// read Spectrum and write to provided array
+			void readSpectrum(unsigned int _sensorID, int *targetArray);
 
 
 		// list all private vars and functions
