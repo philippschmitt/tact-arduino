@@ -25,12 +25,12 @@ Peak values are transmitted in a "namespace" or rather range between 4000 and 50
 
 ## Commands and Responses
 
-| Data                            | Command Key   | Response               |
-| :------------------------------ | :------------ | :--------------------- |
-| Lib Version (initial handshake) | V             | `1000 + VERSION`       |
-| Spectrum                        | S             | successively:          |
-|                                 |               | `2000 + DATA_COUNT`    |
-|                                 |               | `2976 + DATA`          |
-|                                 |               | `2975` (end)           |
-| Peak                            | P             | `4000 + PEAK`          |
-| Bias                            | B             | `5024 + BIAS`          |
+| Data                                 | Command Key   | Response               |
+| :----------------------------------- | :------------ | :--------------------- |
+| **Lib Version** (initial handshake)  | V             | `1000 + VERSION`       |
+| **Spectrum**                         | S             | successively:          |
+| *Number of values to be transmitted* |               | `2000 + DATA_COUNT`    |
+| *repeated for each value*            |               | `2976 + DATA`          |
+| *transmission complete*              |               | `2975` (end)           |
+| **Peak**                             | P             | `4000 + PEAK`          |
+| **Bias**                             | B             | `5024 + BIAS`          |
