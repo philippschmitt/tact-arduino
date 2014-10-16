@@ -317,6 +317,15 @@ void Tact::readSpectrum(unsigned int _sensorID, int *targetArray) {
 }
 
 
+// read Spectrum for single sensor and write values to provided array
+void Tact::readSpectrum(int *targetArray) {
+	// refresh sensor data for current sensor
+	_refresh( _sensorList[0] );
+	// work directly with retArray or memcpy into it from elsewhere like
+  	memcpy(targetArray, (*_sensorList[0]).data, (*_sensorList[0]).cmdBuffer[CMD_BUFFER_COUNT]);
+}
+
+
 // Constructor for TactSensor
 Tact::TactSensor::TactSensor(unsigned int _id, unsigned int _indexStart, unsigned int _indexCount, unsigned int _indexStep) {
 	// fill config array
