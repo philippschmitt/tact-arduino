@@ -312,8 +312,8 @@ int Tact::readBias(unsigned int _sensorID) {
 void Tact::readSpectrum(unsigned int _sensorID, int *targetArray) {
 	// refresh sensor data for current sensor
 	_refresh( _sensorList[_sensorID] );
-	// work directly with retArray or memcpy into it from elsewhere like
-  	memcpy(targetArray, (*_sensorList[_sensorID]).data, (*_sensorList[_sensorID]).cmdBuffer[CMD_BUFFER_COUNT]); 
+	// copy required amounts of integers from sensor data array to target array
+  	memcpy(targetArray, _sensorList[_sensorID]->data, _sensorList[_sensorID]->cmdBuffer[CMD_BUFFER_COUNT] * sizeof(int) ); 
 }
 
 
@@ -322,7 +322,7 @@ void Tact::readSpectrum(int *targetArray) {
 	// refresh sensor data for current sensor
 	_refresh( _sensorList[0] );
 	// work directly with retArray or memcpy into it from elsewhere like
-  	memcpy(targetArray, (*_sensorList[0]).data, (*_sensorList[0]).cmdBuffer[CMD_BUFFER_COUNT]);
+  	memcpy(targetArray, _sensorList[0]->data, _sensorList[0]->cmdBuffer[CMD_BUFFER_COUNT] * sizeof(int) );
 }
 
 
