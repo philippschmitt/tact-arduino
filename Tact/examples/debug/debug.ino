@@ -2,23 +2,23 @@
 #include <Tact.h>
 
 // Init new Tact Toolkit
-Tact Tact(TACT_SINGLE);
+Tact Tact(TACT_MULTI);
 
 
 void setup() {
 
-	pinMode(A2, OUTPUT);
-
 	// Start Serial for logging purposes
-	Serial.begin(115200);
+	// Serial.begin(115200);
 
 	// Start Tact toolkit
-	Tact.begin();
-	// Tact.beginSerial();
+	// Tact.begin();
+	Tact.beginSerial();
 
 	// Add new Sensor and config
 	Tact.addSensor(0, 48, 32, 2);
-	
+
+	pinMode(3, OUTPUT);
+
 	// Add a second sensor
 	// Tact.addSensor(0, 48, 32, 2);
 }
@@ -26,21 +26,26 @@ void setup() {
 
 void loop() {
 
+	// Pulse LED
+	float something = millis()/2000.0;
+ 	int value = 128.0 + 128 * sin( something * 2.0 * PI  );
+  	analogWrite(3, value);
+
 	// used to receive tasks and send data via Serial
-	// Tact.readSerial();
+	Tact.readSerial();
 	
 	// read Bias
 	// Tact.readBias( sensorID );
 
 	// read Peak
-	int peak = Tact.readPeak(0);
-	Serial.println(peak);
+	// int peak = Tact.readPeak(0);
+	// Serial.println(peak);
 	
 	// read Spectrum
 	// int spectrum[32];
 	// Tact.readSpectrum(0, spectrum);	
-	// Serial.println( spectrum[15] );
-	Serial.println( );
+
+	// Serial.println(1);
 
 	// delay(200);
 

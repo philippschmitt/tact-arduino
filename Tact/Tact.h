@@ -84,7 +84,7 @@
 			// Init Tact Toolkit
 			void begin();
 			// Init Tact Toolkit /w Serial
-			void beginSerial();
+			void beginSerial(unsigned int br = BAUD_RATE);
 			// Serial Event Delegation
 			void readSerial();
 			// Add single sensor with ID 0

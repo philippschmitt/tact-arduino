@@ -64,11 +64,11 @@ void Tact::begin() {
 
 }
 
-/*
+
 // Start Tact with Serial
-void Tact::beginSerial() {
+void Tact::beginSerial(unsigned int br) {
 	// Start up serial communication
-  	Serial.begin (BAUD_RATE);
+  	Serial.begin(br);
 	// run regular startup
 	begin();
 }
@@ -85,13 +85,13 @@ void Tact::readSerial() {
 
 	// execute completed Serial commands
 	if( _runCMD == true ) {
-		_executeSerialCommand();
+		// _executeSerialCommand();
 		_runCMD = false;
 	}
 }
-*/
 
-/*
+
+
 void Tact::_serialEvent(const byte inByte) {
 
 	// Do not listen if command is being processed
@@ -133,7 +133,7 @@ void Tact::_serialEvent(const byte inByte) {
 	}
 	
 }
-*/
+
 
 /*
 // execute Serial Command
