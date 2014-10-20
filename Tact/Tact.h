@@ -61,14 +61,6 @@
 	#define CHK(x,y) (x & (1<<y))
 	#define TOG(x,y) (x^=(1<<y))
 
- 	/*
-	#define STATE_IDLE 0
-	#define STATE_RECEIVE_CMD 1
-	#define STATE_TRANSMIT_SENSOR 2
-	#define STATE_TRANSMIT_PEAK 3
-	#define STATE_TRANSMIT_BIAS 4
-	*/
-
  	// Multiplexer 4051' pins
 	#define MP_4051_S0 12
 	#define MP_4051_S1 11
@@ -83,10 +75,6 @@
 			Tact(bool useMultiplexer);
 			// Init Tact Toolkit
 			void begin();
-			// Init Tact Toolkit /w Serial
-			void beginSerial();
-			// Serial Event Delegation
-			void readSerial();
 			// Add single sensor with ID 0
 			void addSensor(unsigned int _indexStart, unsigned int _indexCount, unsigned int _indexStep);
 			// Add Sensor with custom ID
@@ -130,21 +118,6 @@
 
 			// read data from sensor and update sensor data array
 			void _refresh( TactSensor * sensor );
-
-			// handle Serial events
-			void _serialEvent(const byte inByte);
-
-			// execute Serial CMD
-			void _executeSerialCommand();
-
-			// helper to send integers via Serial
-			void _sendInt(unsigned int value);
-
-			char _serialCmdKey;
-			unsigned int _serialCmdBuffer[4];
-			unsigned int _serialCmdIndex;
-			unsigned int _serialState;
-			bool _runCMD;
 
 			// flag; set true if multiplexer should be used
 			bool _useMultiplexer;
