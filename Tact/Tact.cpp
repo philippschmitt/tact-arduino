@@ -67,9 +67,9 @@ void Tact::begin() {
 // Start Tact with Serial
 void Tact::beginSerial(unsigned int br) {
 	// Start up serial communication
-  	Serial.begin(br);
+  Serial.begin(br);
 
-  	// flag needed for serial communication
+  // flag needed for serial communication
 	_runCMD = false;
 	
 	// run regular startup
@@ -105,11 +105,11 @@ void Tact::readSerial() {
 					_serialCmdBuffer[_serialCmdIndex] = _serialCmdBuffer[_serialCmdIndex] * 10 + (int) (inByte - 48);
 					// If in range from A-Z
 				} else if ( inByte > 64 && inByte < 123 ) {
-			        // check if inByte in lowercase range (97-122)
-			        if( inByte > 96) {
-			          // transform to uppercase
-			          inByte -= 32;
-			        }
+	        // check if inByte in lowercase range (97-122)
+	        if( inByte > 96) {
+	          // transform to uppercase
+	          inByte -= 32;
+	        }
 
 					// Set command key/name.
 					_serialCmdKey = inByte;
@@ -123,6 +123,7 @@ void Tact::readSerial() {
 
 					// stop cmd if there's more to come
 					_runCMD = false;
+				
 				} else {
 					// ERROR - unexpected token in parameter stream
 				}
@@ -135,10 +136,10 @@ void Tact::readSerial() {
 	if( _runCMD ) {
 
 		// Declare sensor value buffer 
-	    int results[_serialCmdBuffer[CMD_BUFFER_COUNT]];
-	    // Declare peak and bias vars
-	    int peak = 0;
-	    int bias = 0;
+    int results[_serialCmdBuffer[CMD_BUFFER_COUNT]];
+    // Declare peak and bias vars
+    int peak = 0;
+    int bias = 0;
 		
 		// command is not initial handshake
 		if(_serialCmdKey  != 'V') {
@@ -146,36 +147,36 @@ void Tact::readSerial() {
 			// using multiplex sensor?
 			if(_useMultiplexer) {
 				// Select the sensor-input / bit
-		  		// (use this with arduino 0013+)
-		    	digitalWrite (MP_4051_S0, bitRead (_serialCmdBuffer[CMD_BUFFER_PIN], 0));
-		    	digitalWrite (MP_4051_S1, bitRead (_serialCmdBuffer[CMD_BUFFER_PIN], 1));
-		    	digitalWrite (MP_4051_S2, bitRead (_serialCmdBuffer[CMD_BUFFER_PIN], 2));
-		    }
+	  		// (use this with arduino 0013+)
+	    	digitalWrite (MP_4051_S0, bitRead (_serialCmdBuffer[CMD_BUFFER_PIN], 0));
+	    	digitalWrite (MP_4051_S1, bitRead (_serialCmdBuffer[CMD_BUFFER_PIN], 1));
+	    	digitalWrite (MP_4051_S2, bitRead (_serialCmdBuffer[CMD_BUFFER_PIN], 2));
+	    }
 
-		    for (unsigned int d = 0; d < _serialCmdBuffer[CMD_BUFFER_COUNT]; d++) {
-		      // Reload new frequency
-		      TCNT1 = 0;
-		      ICR1 = _serialCmdBuffer[CMD_BUFFER_START] + _serialCmdBuffer[CMD_BUFFER_STEP] * d;
-		      OCR1A = ICR1 / 2;
+	    for (unsigned int d = 0; d < _serialCmdBuffer[CMD_BUFFER_COUNT]; d++) {
+	      // Reload new frequency
+	      TCNT1 = 0;
+	      ICR1 = _serialCmdBuffer[CMD_BUFFER_START] + _serialCmdBuffer[CMD_BUFFER_STEP] * d;
+	      OCR1A = ICR1 / 2;
 
-		      // Restart generator
-		      SET (TCCR1B, 0);
-		      // Read response signal
-		      results[d] = (float) analogRead(0);
-		      // Stop generator
-		      CLR (TCCR1B, 0);
+	      // Restart generator
+	      SET (TCCR1B, 0);
+	      // Read response signal
+	      results[d] = (float) analogRead(0);
+	      // Stop generator
+	      CLR (TCCR1B, 0);
 
-		      // Check if current result is higher than previously stored peak
-		      // if true, overwrite peak and bias
-		      if( results[d] > peak ) {
-		        peak = results[d];
-		        bias = d;
-		      }
-		    }
+	      // Check if current result is higher than previously stored peak
+	      // if true, overwrite peak and bias
+	      if( results[d] > peak ) {
+	        peak = results[d];
+	        bias = d;
+	      }
+	    }
 
 			// Announce which of the Tact-inputs that 
-	    	// are multiplexed will be transmitted
-	    	_sendInt (1024 + _serialCmdBuffer[CMD_BUFFER_PIN]);
+    	// are multiplexed will be transmitted
+    	_sendInt (1024 + _serialCmdBuffer[CMD_BUFFER_PIN]);
 		}
 		
 
@@ -185,37 +186,32 @@ void Tact::readSerial() {
 			// transmit spectrum
 			case 'S':
 				// send data_type for data to be transmitted
-	          	_sendInt( 1088 + 0 );
-	          	// Tell client how many data values are going to be sent
-	         	_sendInt (1098 + _serialCmdBuffer[CMD_BUFFER_COUNT]);
-	         	/*
-	         	if( _serialCmdBuffer[CMD_BUFFER_COUNT] == 32) {
-	         		analogWrite(6, 255);
-	         	}
-	         	*/
-	          	// Go! Send signal spectrum ...
-	          	for (int x=0; x < _serialCmdBuffer[CMD_BUFFER_COUNT]; x++) {
-	          		_sendInt( results[x] );
-	         	}
+        _sendInt( 1088 + 0 );
+        // Tell client how many data values are going to be sent
+       	_sendInt (1098 + _serialCmdBuffer[CMD_BUFFER_COUNT]);
+        // Go! Send signal spectrum ...
+        for (int x=0; x < _serialCmdBuffer[CMD_BUFFER_COUNT]; x++) {
+        	_sendInt( results[x] );
+       	}
 
 				break;
 
 			// transmit peak
 			case 'P':
 				// send data_type for data to be transmitted
-	          	_sendInt( 1088 + 1 );
-	          	// Tell client how many data values are going to be sent
-	          	_sendInt (1098 + 1);
-	          	// send data
+	      _sendInt( 1088 + 1 );
+	      // Tell client how many data values are going to be sent
+	      _sendInt (1098 + 1);
+	      // send data
 				_sendInt( peak );
 				break;
 
 			case 'B':
 				// send data_type for data to be transmitted
-	        	_sendInt( 1088 + 2 );
-	        	// Tell client how many data values are going to be sent
-	        	_sendInt (1098 + 1);
-	        	// send data
+	      _sendInt( 1088 + 2 );
+	      // Tell client how many data values are going to be sent
+	      _sendInt (1098 + 1);
+	      // send data
 				_sendInt( bias );
 				break;
 
@@ -230,8 +226,8 @@ void Tact::readSerial() {
 		// command is not initial handshake
 		if(_serialCmdKey  != 'V') {
 			// Confirm that all data 
-		    // has been delivered, done!
-		    _sendInt (2123);
+		  // has been delivered, done!
+		  _sendInt (2123);
 		}
 
 		_runCMD = false;
@@ -281,34 +277,34 @@ void Tact::_refresh( TactSensor * sensor ) {
 	sensor->peak = 0;
 	// sensor.bias = 0;
 
-    for (unsigned int d = 0; d < sensor->cmdBuffer[CMD_BUFFER_COUNT]; d++) {
-		// Reload new frequency
-		TCNT1 = 0;
-		ICR1 = sensor->cmdBuffer[CMD_BUFFER_START] + sensor->cmdBuffer[CMD_BUFFER_STEP] * d;
-		OCR1A = ICR1 / 2;
+  for (unsigned int d = 0; d < sensor->cmdBuffer[CMD_BUFFER_COUNT]; d++) {
+	// Reload new frequency
+	TCNT1 = 0;
+	ICR1 = sensor->cmdBuffer[CMD_BUFFER_START] + sensor->cmdBuffer[CMD_BUFFER_STEP] * d;
+	OCR1A = ICR1 / 2;
 
-		// Restart generator
-		SET (TCCR1B, 0);
-		
-		// Read response signal and write to sensor data container
-		sensor->data[d] = (float) analogRead(0);
+	// Restart generator
+	SET (TCCR1B, 0);
+	
+	// Read response signal and write to sensor data container
+	sensor->data[d] = (float) analogRead(0);
 
-		// Stop generator
-		CLR (TCCR1B, 0);
+	// Stop generator
+	CLR (TCCR1B, 0);
 
-		// Check if current result is higher than previously stored peak
-		// if true, overwrite peak and bias
-    	if( sensor->data[d] > sensor->peak ) {
-    		// Serial.println(5);
-			sensor->peak = sensor->data[d];
-        	sensor->bias = d;
-    	}
-    	
-    }
+	// Check if current result is higher than previously stored peak
+	// if true, overwrite peak and bias
+  	if( sensor->data[d] > sensor->peak ) {
+  		// Serial.println(5);
+		sensor->peak = sensor->data[d];
+      	sensor->bias = d;
+  	}
+  	
+  }
 
-    // Toggle pin 9 after each 
-  	// sweep (good for scope)
-  	TOG (PORTB, 0);
+  // Toggle pin 9 after each 
+	// sweep (good for scope)
+	TOG (PORTB, 0);
 }
 
 
@@ -334,7 +330,7 @@ void Tact::readSpectrum(unsigned int _sensorID, int *targetArray) {
 	// refresh sensor data for current sensor
 	_refresh( _sensorList[_sensorID] );
 	// copy required amounts of integers from sensor data array to target array
-  	memcpy(targetArray, _sensorList[_sensorID]->data, _sensorList[_sensorID]->cmdBuffer[CMD_BUFFER_COUNT] * sizeof(int) ); 
+	memcpy(targetArray, _sensorList[_sensorID]->data, _sensorList[_sensorID]->cmdBuffer[CMD_BUFFER_COUNT] * sizeof(int) ); 
 }
 
 
@@ -343,7 +339,7 @@ void Tact::readSpectrum(int *targetArray) {
 	// refresh sensor data for current sensor
 	_refresh( _sensorList[0] );
 	// work directly with retArray or memcpy into it from elsewhere like
-  	memcpy(targetArray, _sensorList[0]->data, _sensorList[0]->cmdBuffer[CMD_BUFFER_COUNT] * sizeof(int) );
+  memcpy(targetArray, _sensorList[0]->data, _sensorList[0]->cmdBuffer[CMD_BUFFER_COUNT] * sizeof(int) );
 }
 
 

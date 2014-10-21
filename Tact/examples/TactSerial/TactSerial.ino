@@ -3,7 +3,7 @@
 
 	This sketch shows how to send Tact sensor data to Processing
 
-	Created 16-10-2014
+	Created 21-10-2014
 	By Philipp Schmitt
 
 	http:// [github URL]
