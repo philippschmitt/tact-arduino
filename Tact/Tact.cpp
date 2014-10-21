@@ -67,7 +67,7 @@ void Tact::begin() {
 // Start Tact with Serial
 void Tact::beginSerial(unsigned int br) {
 	// Start up serial communication
-  Serial.begin(br);
+  	Serial.begin(br);
 
   // flag needed for serial communication
 	_runCMD = false;
@@ -191,7 +191,7 @@ void Tact::readSerial() {
        	_sendInt (1098 + _serialCmdBuffer[CMD_BUFFER_COUNT]);
         // Go! Send signal spectrum ...
         for (int x=0; x < _serialCmdBuffer[CMD_BUFFER_COUNT]; x++) {
-        	_sendInt( results[x] );
+        	_sendInt(results[x]);
        	}
 
 				break;
@@ -199,20 +199,30 @@ void Tact::readSerial() {
 			// transmit peak
 			case 'P':
 				// send data_type for data to be transmitted
-	      _sendInt( 1088 + 1 );
+	      _sendInt(1088 + 1);
 	      // Tell client how many data values are going to be sent
 	      _sendInt (1098 + 1);
 	      // send data
-				_sendInt( peak );
+				_sendInt(peak);
 				break;
 
 			case 'B':
 				// send data_type for data to be transmitted
-	      _sendInt( 1088 + 2 );
+	      _sendInt(1088 + 2);
 	      // Tell client how many data values are going to be sent
 	      _sendInt (1098 + 1);
 	      // send data
-				_sendInt( bias );
+				_sendInt(bias);
+				break;
+
+			case 'X':
+				// send data_type for data to be transmitted
+	      _sendInt( 1088 + 3 );
+	      // Tell client how many data values are going to be sent
+	      _sendInt (1098 + 2);
+	      // send bias
+	      _sendInt(bias);
+	      _sendInt(peak);
 				break;
 
 			case 'V':
