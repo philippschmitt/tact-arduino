@@ -87,8 +87,6 @@ void Tact::readSerial() {
 		// Read incoming serial data
 		byte inByte = Serial.read();
 
-		Serial.println(inByte, DEC);
-
 		switch (inByte) {
 			case '\n':
 				_runCMD = true;
