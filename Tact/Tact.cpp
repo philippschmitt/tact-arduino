@@ -30,15 +30,15 @@
 
 // Constructor
 // also sets _useMultiplexer and _runCMD
-Tact::Tact(bool useMultiplexer) : _useMultiplexer(useMultiplexer), _runCMD(false) {
-
-	// serial controller
-	// _runCMD = false;
+Tact::Tact(bool useMultiplexer) {
 
 	// initiate all fields in sensorList array to NULL
 	for (int i = 0; i < MAX_SENSOR_COUNT; ++i) {
 		_sensorList[i] = NULL;
 	}
+
+	// set flag: use multiplexed sensor or not?
+	_useMultiplexer = useMultiplexer;
 }
 
 
@@ -69,6 +69,10 @@ void Tact::begin() {
 void Tact::beginSerial(unsigned int br) {
 	// Start up serial communication
   	Serial.begin(br);
+
+  	// flag needed for serial communication
+	_runCMD = false;
+	
 	// run regular startup
 	begin();
 }
@@ -76,145 +80,177 @@ void Tact::beginSerial(unsigned int br) {
 
 // Serial Event Delegation
 void Tact::readSerial() {
+
 	// While there is anything in the 
 	// pipe that has not been processed..
 	while (Serial.available() > 0) {
+		
 		// Read incoming serial data
-		_serialEvent (Serial.read());
-	}
+		byte inByte = Serial.read();
+		
+		switch (inByte) {
+			case '\n':
+				_runCMD = true;
+				break;
+			case CMD_SEPARATOR:
+				// If token is command-separator: then increment 
+				// command-index to address the next field of 
+				// the command-buffer
+				_serialCmdIndex++;
+				break;
+			// If none of the above
+			default:
+				// Test if byte represents a digit and 
+				// update existing int value
+				if (inByte > 47 && inByte < 58) {
+					_serialCmdBuffer[_serialCmdIndex] = _serialCmdBuffer[_serialCmdIndex] * 10 + (int) (inByte - 48);
+					// If in range from A-Z
+				} else if ( inByte > 64 && inByte < 123 ) {
+			        // check if inByte in lowercase range (97-122)
+			        if( inByte > 96) {
+			          // transform to uppercase
+			          inByte -= 32;
+			        }
 
-	// execute completed Serial commands
-	if( _runCMD == true ) {
-		// _executeSerialCommand();
+					// Set command key/name.
+					_serialCmdKey = inByte;
+					// reset the command-index to -1
+					_serialCmdIndex = -1;
+					// clear list of command parameters
+					_serialCmdBuffer[0] = 0;
+					_serialCmdBuffer[1] = 0;
+					_serialCmdBuffer[2] = 0;
+					_serialCmdBuffer[3] = 0;
+
+					// stop cmd if there's more to come
+					_runCMD = false;
+				} else {
+					// ERROR - unexpected token in parameter stream
+				}
+				break;
+		}
+	}
+	
+
+	// execute completed Serial command
+	if( _runCMD ) {
+
+		// Declare sensor value buffer 
+	    int results[_serialCmdBuffer[CMD_BUFFER_COUNT]];
+	    // Declare peak and bias vars
+	    int peak = 0;
+	    int bias = 0;
+		
+		// command is not initial handshake
+		if(_serialCmdKey  != 'V') {
+			
+			// using multiplex sensor?
+			if(_useMultiplexer) {
+				// Select the sensor-input / bit
+		  		// (use this with arduino 0013+)
+		    	digitalWrite (MP_4051_S0, bitRead (_serialCmdBuffer[CMD_BUFFER_PIN], 0));
+		    	digitalWrite (MP_4051_S1, bitRead (_serialCmdBuffer[CMD_BUFFER_PIN], 1));
+		    	digitalWrite (MP_4051_S2, bitRead (_serialCmdBuffer[CMD_BUFFER_PIN], 2));
+		    }
+
+		    for (unsigned int d = 0; d < _serialCmdBuffer[CMD_BUFFER_COUNT]; d++) {
+		      // Reload new frequency
+		      TCNT1 = 0;
+		      ICR1 = _serialCmdBuffer[CMD_BUFFER_START] + _serialCmdBuffer[CMD_BUFFER_STEP] * d;
+		      OCR1A = ICR1 / 2;
+
+		      // Restart generator
+		      SET (TCCR1B, 0);
+		      // Read response signal
+		      results[d] = (float) analogRead(0);
+		      // Stop generator
+		      CLR (TCCR1B, 0);
+
+		      // Check if current result is higher than previously stored peak
+		      // if true, overwrite peak and bias
+		      if( results[d] > peak ) {
+		        peak = results[d];
+		        bias = d;
+		      }
+		    }
+
+			// Announce which of the Tact-inputs that 
+	    	// are multiplexed will be transmitted
+	    	_sendInt (1024 + _serialCmdBuffer[CMD_BUFFER_PIN]);
+		}
+		
+
+		// act depending on command key
+		switch (_serialCmdKey) {
+			
+			// transmit spectrum
+			case 'S':
+				// send data_type for data to be transmitted
+	          	_sendInt( 1088 + 0 );
+	          	// Tell client how many data values are going to be sent
+	         	_sendInt (1098 + _serialCmdBuffer[CMD_BUFFER_COUNT]);
+	         	/*
+	         	if( _serialCmdBuffer[CMD_BUFFER_COUNT] == 32) {
+	         		analogWrite(6, 255);
+	         	}
+	         	*/
+	          	// Go! Send signal spectrum ...
+	          	for (int x=0; x < _serialCmdBuffer[CMD_BUFFER_COUNT]; x++) {
+	          		_sendInt( results[x] );
+	         	}
+
+				break;
+
+			// transmit peak
+			case 'P':
+				// send data_type for data to be transmitted
+	          	_sendInt( 1088 + 1 );
+	          	// Tell client how many data values are going to be sent
+	          	_sendInt (1098 + 1);
+	          	// send data
+				_sendInt( peak );
+				break;
+
+			case 'B':
+				// send data_type for data to be transmitted
+	        	_sendInt( 1088 + 2 );
+	        	// Tell client how many data values are going to be sent
+	        	_sendInt (1098 + 1);
+	        	// send data
+				_sendInt( bias );
+				break;
+
+			case 'V':
+				_sendInt (2124 + VERSION);
+				break;
+
+			default:
+				; // do nothing
+		}
+
+		// command is not initial handshake
+		if(_serialCmdKey  != 'V') {
+			// Confirm that all data 
+		    // has been delivered, done!
+		    _sendInt (2123);
+		}
+
 		_runCMD = false;
 	}
 }
-
-
-
-void Tact::_serialEvent(const byte inByte) {
-
-	// Do not listen if command is being processed
-	if(_runCMD) {
-		return;
-	}
-
-	switch (inByte) {
-		case '\n':
-			_runCMD = true;
-			break;
-		case CMD_SEPARATOR:
-			// If token is command-separator: then increment 
-			// command-index to address the next field of 
-			// the command-buffer
-			_serialCmdIndex++;
-			break;
-		// If none of the above
-		default:
-			// Test if byte represents a digit and 
-			// update existing int value
-			if (inByte > 47 && inByte < 58) {
-				_serialCmdBuffer[_serialCmdIndex] = _serialCmdBuffer[_serialCmdIndex] * 10 + (int) (inByte - 48);
-				// If in range from A-Z
-			} else if (inByte > 64 && inByte < 91) {
-				// Set command key/name.
-				_serialCmdKey = inByte;
-				// reset the command-index to -1
-				_serialCmdIndex = -1;
-				// clear list of command parameters
-				_serialCmdBuffer[0] = 0;
-				_serialCmdBuffer[1] = 0;
-				_serialCmdBuffer[2] = 0;
-				_serialCmdBuffer[3] = 0;
-			} else {
-				// ERROR - unexpected token in parameter stream
-			}
-			break;
-	}
-	
-}
-
-
-/*
-// execute Serial Command
-void Tact::_executeSerialCommand() {
-
-	// command is not initial handshake
-	if(_serialCmdKey  != 'V') {
-		/*
-		// TactSensor logic:
-		// check, if requested sensor exists
-		if( ! &_sensorList[_serialCmdBuffer[CMD_BUFFER_PIN]] ) {
-			digitalWrite(A2, HIGH);
-			// it doesn't. 
-			// add it to the list
-			addSensor(_serialCmdBuffer[CMD_BUFFER_PIN], _serialCmdBuffer[CMD_BUFFER_START], _serialCmdBuffer[CMD_BUFFER_COUNT], _serialCmdBuffer[CMD_BUFFER_STEP]);
-		
-		// update sensor settings, just in case they have been changed
-		} else {
-			updateSensor(_serialCmdBuffer[CMD_BUFFER_PIN], _serialCmdBuffer[CMD_BUFFER_START], _serialCmdBuffer[CMD_BUFFER_COUNT], _serialCmdBuffer[CMD_BUFFER_STEP]);
-		}
-		*//*
-
-		// Announce which of the Tact-inputs that 
-    	// are multiplexed will be transmitted
-    	_sendInt (3000 + _serialCmdBuffer[CMD_BUFFER_PIN]);
-	}
-
-	// act depending on command key
-	switch (_serialCmdKey) {
-		
-		// transmit spectrum
-		case 'G':
-			// refresh sensor
-			_refresh( (*_sensorList[_serialCmdBuffer[CMD_BUFFER_PIN]]) );
-			// Tell client that a result array 
-          	// is about to be dispatched
-          	_sendInt (2000 + _serialCmdBuffer[CMD_BUFFER_COUNT]);
-
-          	// Go! Send signal spectrum ...
-          	for (int x=0; x < _serialCmdBuffer[CMD_BUFFER_COUNT]; x++) {
-            	_sendInt( (*_sensorList[_serialCmdBuffer[CMD_BUFFER_PIN]]).data[x] );
-         	}
-
-         	// Confirm that signal spectrum 
-    		// has been delivered, done!
-    		_sendInt (2999);
-
-			break;
-
-		// transmit peak
-		case 'P':
-			_sendInt(4000 + readPeak(_serialCmdBuffer[CMD_BUFFER_PIN]) );
-			break;
-
-		case 'B':
-			_sendInt(5000 + readBias(_serialCmdBuffer[CMD_BUFFER_PIN]) );
-			break;
-
-		case 'V':
-			_sendInt (5000 + VERSION);
-			break;
-
-		default:
-			// no valid command
-			// do nothing
-			break;
-	}
-}
-*/
 
 
 // Helper to send integers via Serial
 /* y = 01010100 11010100    (value is a 2 Byte integer)
  *     yMSB     yLSB        send seperately -> joined by client
  */
- /*
 void Tact::_sendInt (unsigned int value) {
 	Serial.write (byte(lowByte(value)));   // send Low Byte  
 	Serial.write (byte(highByte(value)));  // send high Byte   
+	// debug: print ints
+	// Serial.println(value);
 }
-*/
+
 
 // Add single sensor with ID = 0
 void Tact::addSensor(unsigned int _indexStart, unsigned int _indexCount, unsigned int _indexStep) {
@@ -229,20 +265,6 @@ void Tact::addSensor(unsigned int _sensorID, unsigned int _indexStart, unsigned 
 	_sensorList[_sensorID] = new TactSensor(_sensorID, _indexStart, _indexCount, _indexStep);
 }
 
-/*
-// Update sensor settings
-void Tact::updateSensor(unsigned int _sensorID, unsigned int _indexStart, unsigned int _indexCount, unsigned int _indexStep) {
-	// update sensor settings
-	// if( (*_sensorList[_sensorID]).cmdBuffer[0] != _sensorID || (*_sensorList[_sensorID]).cmdBuffer[1] != _indexStart || (*_sensorList[_sensorID]).cmdBuffer[2] != _indexCount || (*_sensorList[_sensorID]).cmdBuffer[3] != _indexStep ) {
-		(*_sensorList[_sensorID]).cmdBuffer[0] = _sensorID;
-		(*_sensorList[_sensorID]).cmdBuffer[1] = _indexStart;
-		(*_sensorList[_sensorID]).cmdBuffer[2] = _indexCount;
-		(*_sensorList[_sensorID]).cmdBuffer[3] = _indexStep;
-
-		// _refresh( (*_sensorList[_sensorID]) );
-	// }
-}
-*/
 
 // read data from sensor and refresh data array of object TactSensor
 void Tact::_refresh( TactSensor * sensor ) {
