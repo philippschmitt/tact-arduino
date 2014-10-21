@@ -75,12 +75,14 @@
 			Tact(bool useMultiplexer);
 			// Init Tact Toolkit
 			void begin();
+			// Init Tact Toolkit /w Serial
+			void beginSerial(unsigned int br = BAUD_RATE);
+			// Serial Event Delegation
+			void readSerial();
 			// Add single sensor with ID 0
 			void addSensor(unsigned int _indexStart, unsigned int _indexCount, unsigned int _indexStep);
 			// Add Sensor with custom ID
 			void addSensor(unsigned int _sensorID, unsigned int _indexStart, unsigned int _indexCount, unsigned int _indexStep);
-			// change sensor settings
-			// void updateSensor(unsigned int _sensorID, unsigned int _indexStart, unsigned int _indexCount, unsigned int _indexStep);
 			// return peak for single sensor
 			int readPeak(unsigned int _sensorID = 0);
 			// return bias for single sensor
@@ -119,9 +121,19 @@
 			// read data from sensor and update sensor data array
 			void _refresh( TactSensor * sensor );
 
+			// helper to send integers via Serial
+			void _sendInt(unsigned int value);
+
+			// helper vars to store Serial commands during retrieval and execution
+			char _serialCmdKey;
+			unsigned int _serialCmdBuffer[4];
+			int _serialCmdIndex;
+
+			// flag: true while Serial command is being executed
+			bool _runCMD;
+
 			// flag; set true if multiplexer should be used
 			bool _useMultiplexer;
-			
 	};
 
 
