@@ -65,7 +65,7 @@ void Tact::begin() {
 
 
 // Start Tact with Serial
-void Tact::beginSerial(unsigned int br) {
+void Tact::beginSerial(long br) {
 	// Start up serial communication
   	Serial.begin(br);
 
@@ -86,7 +86,9 @@ void Tact::readSerial() {
 		
 		// Read incoming serial data
 		byte inByte = Serial.read();
-		
+
+		Serial.println(inByte, DEC);
+
 		switch (inByte) {
 			case '\n':
 				_runCMD = true;

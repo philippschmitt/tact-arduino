@@ -1,13 +1,13 @@
 /*
-	Single Sensor
-
-	This sketch shows how to send Tact sensor data to Processing
-
-	Created 21-10-2014
-	By Philipp Schmitt
-
-	http:// [github URL]
-*/
+  Single Sensor
+ 
+  This sketch shows how to send Tact sensor data to Processing
+ 
+  Created 21-10-2014
+  By Philipp Schmitt
+ 
+  http:// [github URL]
+ */
 
 
 // Include Tact Library
