@@ -88,7 +88,8 @@ void Tact::readSerial() {
 		byte inByte = Serial.read();
 
 		switch (inByte) {
-			case '\n':
+			// is newline
+			case 10:
 				_runCMD = true;
 				break;
 			case CMD_SEPARATOR:
@@ -235,7 +236,7 @@ void Tact::readSerial() {
 
 		// command is not initial handshake
 		if(_serialCmdKey  != 'V') {
-			// Confirm that all data 
+		  // Confirm that all data 
 		  // has been delivered, done!
 		  _sendInt (2123);
 		}

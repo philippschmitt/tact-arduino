@@ -49,9 +49,8 @@
  	#define TACT_SINGLE false
  	#define TACT_MULTI true
 
-  	// Max allowed number of meterings
- 	// needed to define data array size in class TactSensor
- 	#define MAX_BUFFER_SIZE 60
+  // Max allowed number of meterings
+  #define MAX_BUFFER_SIZE 60
 
 	#define CMD_SEPARATOR ' '
 
