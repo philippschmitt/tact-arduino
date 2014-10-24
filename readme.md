@@ -127,4 +127,18 @@ void loop() {
 
   // do other stuff here
 }
-````   
+```` 
+
+
+### Questions
+Any questions or feedback? Contact me on [Twitter](http://twitter.com/philippschmitt). For bug reports, please use the [issue tracker](https://github.com/philippschmitt/tact-arduino/issues).
+
+
+### Who made this?
+This library has been developed by [Philipp Schmitt](http://philippschmitt.com) at [Studio NAND](http://nand.io). It’s based on many smart ideas – so cheers to everyone who contributed her/his time to investigate capacitive technology! Special thanks to the team around [Ivan Poupyrev](http://www.ivanpoupyrev.com) for all the research within this field and [Mads Hobye](http://www.hobye.dk) for his [Arduino tutorial](http://www.instructables.com/id/Touche-for-Arduino-Advanced-touch-sensing/) about advanced touch sensing. All of that has been a big help and inspiration.
+
+
+### Copyright
+Copyright (c) 2014 Philipp Schmitt. Licensed under the GNU Lesser General Public License. See license.txt for further details.
+
+Any example code is released into the public domain.
