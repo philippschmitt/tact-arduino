@@ -1,9 +1,9 @@
-Tact			KEYWORD1
+Tact	KEYWORD1
 
-begin			KEYWORD2
-beginSerial 	KEYWORD2
+begin	KEYWORD2
+beginSerial	KEYWORD2
 
-addSensor		KEYWORD2
-readBias		KEYWORD2
-readPeak		KEYWORD2
+addSensor	KEYWORD2
+readBias	KEYWORD2
+readPeak	KEYWORD2
 readSpectrum	KEYWORD2
